@@ -49,6 +49,11 @@ jobs:
       - name: Example — install from the registry and build
         run: npm run example:install
 
+      # Proves Tailwind runs through the cssTransform seam without the library
+      # ever depending on tailwindcss or postcss.
+      - name: Example — build with tailwind through the css transform
+        run: npm run example:tailwind
+
   release:
     name: Release
     needs: verify
