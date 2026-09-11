@@ -176,8 +176,16 @@ esbuild-wasm already spins up its own Web Worker to compile, so the build does n
 If you also want the resolver and the VFS off the main thread, put the whole `NodelessProject`
 in a worker.
 
-A running example: [`example/browser`](example/README.md) — it installs from the registry in the
-browser and rebuilds as you type, with no `node_modules` anywhere.
+```bash
+npm run playground
+```
+
+Opens an editor with a preview beside it. It installs from registry.npmjs.org **in your
+browser**, builds there, and renders the result — no `node_modules` anywhere.
+
+![the nodeless playground](example/browser/playground.png)
+
+A headless Chromium run of that page is a CI job, so this is verified rather than claimed.
 
 ## Public surface
 
@@ -208,8 +216,7 @@ Radix, lucide, zustand, react-router, date-fns, zod — and bundles them in ~1.4
 
 **Not done yet:** React Refresh — with ~200 ms rebuilds a full iframe reload costs less than the
 machinery, and the transform it needs is Babel-grade work esbuild does not do. Persistent
-caching is a `PackageCache` away but has no implementation. The browser page has not been run in
-an actual browser.
+caching is a `PackageCache` away but has no implementation.
 
 ## Development
 
@@ -219,7 +226,7 @@ npm test
 npm run example         # builds example/app in Node, offline
 npm run example:install # installs from the real registry and builds the result
 npm run example:tailwind # builds a tailwind v3 project through the css transform
-npm run example:browser # serves the page running that same dist/ in a browser
+npm run playground      # opens the editor-and-preview page in your browser
 ```
 
 | Where                                   | What                                     |

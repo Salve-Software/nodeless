@@ -54,8 +54,8 @@ imports and a missing entry point all come out in `errors: BuildMessage[]` with 
 column. A caller that has to act on a failure needs the position, and an exception would lose
 it.
 
-Exceptions are reserved for misuse, not for build outcomes: `FileNotFoundError`,
-`InvalidSnapshotError`, `InstallerNotConfiguredError`. `ResolveError` is thrown by the resolver
+Exceptions are reserved for misuse and for install failures, not for build outcomes:
+`FileNotFoundError`, `InvalidSnapshotError`, `InstallError`. `ResolveError` is thrown by the resolver
 and caught by the plugin, which converts it into a `BuildMessage`.
 
 ## `build()` is pure with respect to the VFS
@@ -75,6 +75,7 @@ themselves.
 | `classes/vfs/`           | `MemoryVfs`                                             |
 | `classes/resolver/`      | `NodeResolver` and the algorithm under `library/`       |
 | `classes/bundler/`       | `EsbuildBundler` and the `nodeless-vfs` plugin          |
+| `classes/installer/`     | `RegistryInstaller` and the in-memory package cache     |
 | `nodeless-project.class` | the facade; the only loose class at the root            |
 
 ## Maintenance rules

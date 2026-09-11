@@ -59,9 +59,8 @@ A rule that came from Node, esbuild or a real package **says where it came from*
 
 ## Exception
 
-`TODO(phase N):` marking work that already has a contract and no implementation. Today there is
-exactly one such path, the installer, and it does not use `TODO`: it throws
-`InstallerNotConfiguredError` with a message saying what to do. **An explicit error beats a
-silent `TODO`.**
+`TODO(phase N):` marking work that already has a contract and no implementation. There is none
+today. When a path is unimplemented, **an explicit error beats a silent `TODO`** — say what to
+do in the message and let it throw.
 
 When in doubt, do not comment.

@@ -60,12 +60,26 @@ seam: Tailwind is the consumer's choice, not everyone's cost.
 ## In the browser
 
 ```bash
-npm run example:browser   # http://localhost:5173/example/browser/
+npm run playground
 ```
 
-Compiles the library and serves it statically. The page loads `dist/` directly, with no bundling
-step: the four runtime dependencies arrive from a CDN through an import map.
+Compiles the library, serves the repository and opens the page. A CodeMirror editor with file
+tabs on the left, a live preview on the right, structured diagnostics underneath.
 
-It fetches its sources from `example/app`, **installs from registry.npmjs.org in the browser**,
-and builds. Edit `App.tsx` in the textarea on the left and the iframe on the right rebuilds —
-this is `npm run dev`, except the "dev server" is `watch()` plus `build()` in your own browser.
+![the nodeless playground](browser/playground.png)
+
+The page loads `dist/` directly, with no bundling step: the four runtime dependencies arrive
+from a CDN through an import map. It **installs from registry.npmjs.org in the browser**, builds
+there, and renders the output in an iframe. Edit and it rebuilds — this is `npm run dev`, except
+the "dev server" is `watch()` plus `build()` in your own tab.
+
+### Verified, not claimed
+
+```bash
+npm run example:browser:test
+```
+
+Drives that same page in a headless Chromium and asserts six things: install runs against the
+registry over CORS, build runs, the iframe **executes** the bundle, React state updates on a
+click, an edit rebuilds and re-renders, and a syntax error comes back as a diagnostic carrying
+`file:line:column`. It runs as its own CI job, and it regenerates the screenshot above.

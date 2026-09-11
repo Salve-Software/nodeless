@@ -23,7 +23,7 @@ Three jobs that looked like one:
 
 | Job                             | Needs a VM?                        |
 | ------------------------------- | ---------------------------------- |
-| agent workspace                 | no — a VFS does it                 |
+| a workspace to read and write   | no — a VFS does it                 |
 | `npm install` + `npm run build` | no — an in-process bundler does it |
 | isolating the generated code    | no — bundling does not execute     |
 
@@ -49,10 +49,13 @@ lucide, zustand, react-router, date-fns, zod — and bundles them, and both run 
 CSS modules work, Tailwind v3 works through the `cssTransform` seam, and `build({ cdn })` can
 resolve uninstalled packages off a CDN. All four extra examples run in CI.
 
+`npm run playground` opens an editor-and-preview page that installs from the registry **in the
+browser** and rebuilds as you type. A headless Chromium run of it is a CI job, so the browser
+path is verified rather than assumed.
+
 **What is still missing:** React Refresh, which is a deliberate no — a rebuild plus an iframe
 reload costs ~200 ms and the transform it needs is Babel-grade work esbuild does not do.
-Persistent caching is a `PackageCache` away and has no implementation. The browser page exists
-and the `dist/` is verifiably Node-free, but nobody has run it in an actual browser yet.
+Persistent caching is a `PackageCache` away and has no implementation.
 
 ## Mandatory rules
 

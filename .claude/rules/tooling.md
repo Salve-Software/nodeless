@@ -10,9 +10,11 @@
 | `npm run lint` / `lint:fix`       | ESLint                                                 |
 | `npm run format` / `format:check` | Prettier                                               |
 | `npm test` / `test:watch`         | Vitest                                                 |
-| `npm run example`                 | builds `example/app` in Node and writes the snapshot   |
+| `npm run example`                 | builds `example/app` in Node, offline                  |
 | `npm run example:install`         | installs from the real registry and builds the result  |
-| `npm run example:browser`         | serves the page running that same `dist/` in a browser |
+| `npm run example:tailwind`        | builds a Tailwind v3 project through the css transform |
+| `npm run playground`              | opens the editor-and-preview page in your browser      |
+| `npm run example:browser:test`    | drives that page headless and asserts it really works  |
 
 ## Two tsconfigs, and the second one is a guard
 
@@ -100,7 +102,12 @@ warm build goes over 500 ms. The second is the only end-to-end proof of the inst
 talks to registry.npmjs.org and really bundles Radix, lucide, zustand and react-router. It is
 also the only step in CI that needs the network.
 
-**`release`** runs **only on a push to `main`**, depends on `verify`, and fires semantic-release.
+**`browser`** installs Chromium and drives the playground headlessly: it checks that the page
+installs from the registry over CORS, builds, and that the **iframe really executes the bundle** —
+React mounts, state updates on click, an edit rebuilds, and a syntax error comes back as a
+diagnostic. It is the only proof that the browser half of "isomorphic" is real.
+
+**`release`** runs **only on a push to `main`**, depends on both jobs, and fires semantic-release.
 
 ## Semantic release
 
