@@ -1,6 +1,6 @@
 {
   "name": "@salve-software/nodeless",
-  "version": "0.0.0-development",
+  "version": "0.1.0",
   "type": "module",
   "description": "npm install and a React build, without Node. The same code in a server and in the browser: no shell, no filesystem, no VM.",
   "license": "MIT",
