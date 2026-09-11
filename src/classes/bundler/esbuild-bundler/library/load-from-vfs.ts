@@ -1,6 +1,9 @@
 import type { VfsPluginOptions } from '@/classes/bundler/esbuild-bundler/types/index.js';
 import type { OnLoadResult } from 'esbuild-wasm';
-import { CSS_LOADERS } from '@/classes/bundler/esbuild-bundler/constants/index.js';
+import {
+  CSS_LOADERS,
+  DEFAULT_ASSET_LIMIT,
+} from '@/classes/bundler/esbuild-bundler/constants/index.js';
 import { dirname } from '@/library/index.js';
 import { inlineOrEmit } from './inline-or-emit.js';
 import { loaderFor } from './loader-for.js';
@@ -10,7 +13,7 @@ export async function loadFromVfs(
   {
     vfs,
     cssTransform,
-    assetLimit = 0,
+    assetLimit = DEFAULT_ASSET_LIMIT,
   }: Pick<VfsPluginOptions, 'vfs' | 'cssTransform' | 'assetLimit'>,
   path: string,
 ): Promise<OnLoadResult> {

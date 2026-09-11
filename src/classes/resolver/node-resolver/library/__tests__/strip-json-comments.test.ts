@@ -27,3 +27,14 @@ describe('stripJsonComments', () => {
     });
   });
 });
+
+describe('stripJsonComments, a comma inside a string', () => {
+  // A regex over the finished text would eat this one and corrupt the value.
+  it('survives a trailing comma pattern inside a string', () => {
+    expect(JSON.parse(stripJsonComments('{ "a": "x, }" }'))).toEqual({ a: 'x, }' });
+  });
+
+  it('still removes a real trailing comma after one', () => {
+    expect(JSON.parse(stripJsonComments('{ "a": "x, }", }'))).toEqual({ a: 'x, }' });
+  });
+});

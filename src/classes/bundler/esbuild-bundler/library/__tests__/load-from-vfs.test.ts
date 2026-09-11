@@ -80,3 +80,27 @@ describe('loadFromVfs', () => {
     expect(contentsOf(result)).toBe('done');
   });
 });
+
+describe('loadFromVfs, the asset limit', () => {
+  const assets = {
+    '/src/small.png': new Uint8Array(10),
+    '/src/large.png': new Uint8Array(9000),
+  };
+
+  // Defaulting to 0 here would quietly emit every asset as a file for anyone
+  // building the plugin directly instead of going through the bundler.
+  it('uses the same 4 kB default the bundler passes', async () => {
+    const vfs = new MemoryVfs({ files: assets });
+
+    expect((await loadFromVfs({ vfs }, '/src/small.png')).loader).toBe('dataurl');
+    expect((await loadFromVfs({ vfs }, '/src/large.png')).loader).toBe('file');
+  });
+
+  it('an explicit limit wins', async () => {
+    const vfs = new MemoryVfs({ files: assets });
+
+    expect(
+      (await loadFromVfs({ vfs, assetLimit: 100_000 }, '/src/large.png')).loader,
+    ).toBe('dataurl');
+  });
+});

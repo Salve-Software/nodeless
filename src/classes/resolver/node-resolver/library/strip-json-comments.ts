@@ -40,9 +40,13 @@ export function stripJsonComments(text: string): string {
       continue;
     }
 
+    // Done here rather than with a regex over the result, which would also eat a
+    // comma that happens to sit inside a string.
+    if (char === '}' || char === ']') out = out.replace(/,\s*$/, '');
+
     out += char;
     index += 1;
   }
 
-  return out.replace(/,(\s*[}\]])/g, '$1');
+  return out;
 }

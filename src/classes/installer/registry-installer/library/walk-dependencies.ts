@@ -3,6 +3,7 @@ import type {
   InstallRequest,
   InstallScope,
   InstalledPackage,
+  ResolveOutcome,
   ResolvedPackage,
 } from '@/classes/installer/registry-installer/types/index.js';
 import { dependenciesOf } from './dependencies-of.js';
@@ -32,12 +33,13 @@ export async function walkDependencies(
 
     const resolved = await Promise.all(level.map((request) => resolve(scope, request)));
 
-    for (const item of resolved) {
-      if (item.failure !== undefined) {
-        warnings.push(item.failure);
+    for (const outcome of resolved) {
+      if (!outcome.ok) {
+        warnings.push(outcome.warning);
         continue;
       }
 
+      const item = outcome.package;
       const dir = planInstallDir(rootVersions, {
         request: item.request,
         version: item.version.version,
@@ -72,24 +74,24 @@ export async function walkDependencies(
 async function resolve(
   scope: InstallScope,
   request: InstallRequest,
-): Promise<ResolvedPackage & { failure?: string }> {
+): Promise<ResolveOutcome> {
   const local = fromWorkspace(scope, request);
 
-  if (local) return local;
+  if (local) return { ok: true, package: local };
 
   try {
     const packument = await fetchPackument(scope, request.name);
     const version = pickVersion(packument, request.range);
     const files = await downloadPackage(scope, { name: request.name, version });
 
-    return { request, version, tarball: version.dist.tarball, files };
+    return {
+      ok: true,
+      package: { request, version, tarball: version.dist.tarball, files },
+    };
   } catch (error) {
     return {
-      request,
-      version: { version: '0.0.0', dist: { tarball: '' } },
-      tarball: '',
-      files: {},
-      failure: `Skipped ${request.name}@${request.range}: ${
+      ok: false,
+      warning: `Skipped ${request.name}@${request.range}: ${
         error instanceof Error ? error.message : String(error)
       }`,
     };

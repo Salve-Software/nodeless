@@ -5,4 +5,5 @@ export type * from './installed-package.js';
 export type * from './packument-version.js';
 export type * from './packument.js';
 export type * from './registry-installer-options.js';
+export type * from './resolve-outcome.js';
 export type * from './resolved-package.js';
