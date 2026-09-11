@@ -7,6 +7,8 @@ import type {
   InstallResult,
   Installer,
   NodelessProjectOptions,
+  Plugin,
+  Runtime,
   Vfs,
   VfsSnapshot,
   VfsWatchEvent,
@@ -14,62 +16,74 @@ import type {
   WatchOptions,
 } from '@/types/index.js';
 import { EsbuildBundler } from '@/classes/bundler/index.js';
+import { CONFIG_CANDIDATES } from '@/classes/config/config-loader/constants/index.js';
+import { ConfigLoader } from '@/classes/config/index.js';
 import { RegistryInstaller } from '@/classes/installer/index.js';
+import { PluginContainer } from '@/classes/plugin/index.js';
 import { NodeResolver } from '@/classes/resolver/index.js';
-import { SassTransform, TailwindTransform } from '@/classes/transform/index.js';
+import { ModuleRuntime } from '@/classes/runtime/index.js';
+import { RUNTIME_CONDITIONS } from '@/classes/runtime/module-runtime/constants/index.js';
 import { MemoryVfs } from '@/classes/vfs/index.js';
 import { DEFAULT_CONDITIONS, DEFAULT_DEBOUNCE_MS } from '@/constants/index.js';
+import { tryResolve } from '@/library/index.js';
+import { sassPlugin, tailwindPlugin } from '@/plugins/index.js';
 
 /** The library surface: a VFS, a build, and a snapshot to move between front end and API. */
 export class NodelessProject {
   readonly vfs: Vfs;
-  private readonly bundler: Bundler;
+  private readonly options: NodelessProjectOptions;
   private readonly installer: Installer;
+  private readonly runtime: Runtime;
+  private readonly config: ConfigLoader;
+  private bundler: Bundler | undefined;
 
-  constructor({
-    files,
-    snapshot,
-    vfs,
-    bundler,
-    installer,
-    conditions = DEFAULT_CONDITIONS,
-    wasmURL,
-    esbuild,
-    transforms = [],
-    registryUrl,
-    packageCache,
-    fetch: fetchImpl,
-  }: NodelessProjectOptions = {}) {
+  constructor(options: NodelessProjectOptions = {}) {
+    const { files, snapshot, vfs, installer, runtime, registryUrl, packageCache } =
+      options;
+
+    this.options = options;
     this.vfs =
       vfs ??
       new MemoryVfs({ ...(files ? { files } : {}), ...(snapshot ? { snapshot } : {}) });
-    this.bundler =
-      bundler ??
-      new EsbuildBundler({
-        vfs: this.vfs,
-        resolver: new NodeResolver({ vfs: this.vfs, conditions }),
-        ...(wasmURL === undefined ? {} : { wasmURL }),
-        ...(esbuild === undefined ? {} : { esbuild }),
-        transforms: [...transforms, new TailwindTransform(), new SassTransform()],
-      });
+    this.runtime = runtime ?? this.createRuntime();
+    this.config = new ConfigLoader({ vfs: this.vfs, runtime: this.runtime });
+    this.bundler = options.bundler;
     this.installer =
       installer ??
       new RegistryInstaller({
         vfs: this.vfs,
         ...(registryUrl === undefined ? {} : { registryUrl }),
         ...(packageCache === undefined ? {} : { cache: packageCache }),
-        ...(fetchImpl === undefined ? {} : { fetch: fetchImpl }),
+        ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
       });
+
+    // Vite restarts on a config edit for the same reason: the plugins are already built.
+    this.vfs.watch((event) => {
+      if (CONFIG_CANDIDATES.includes(event.path)) this.reset();
+    });
   }
 
   /** Reads `/package.json` and fills `/node_modules`. Never runs a lifecycle script. */
   async install(options?: InstallOptions): Promise<InstallResult> {
-    return this.installer.install(options);
+    const result = await this.installer.install(options);
+
+    // A config that was unresolvable before the install may resolve now.
+    this.reset();
+
+    return result;
   }
 
   /** Does not write to the VFS. That is what lets `watch` run without a build firing itself. */
-  async build(options?: BuildOptions): Promise<BuildResult> {
-    return this.bundler.build(options);
+  async build(options: BuildOptions = {}): Promise<BuildResult> {
+    const config = await this.config.load(options.mode ?? 'production');
+    const bundler = this.bundlerFor(config.plugins, config.aliases);
+    const outdir = options.outdir ?? config.outdir;
+
+    return bundler.build({
+      ...options,
+      define: { ...config.define, ...options.define },
+      ...(outdir === undefined ? {} : { outdir }),
+    });
   }
 
   watch(
@@ -94,6 +108,55 @@ export class NodelessProject {
   }
 
   async dispose(): Promise<void> {
-    return this.bundler.dispose();
+    await this.runtime.dispose();
+    await this.bundler?.dispose();
+  }
+
+  private createRuntime(): Runtime {
+    return new ModuleRuntime({
+      vfs: this.vfs,
+      resolver: new NodeResolver({ vfs: this.vfs, conditions: RUNTIME_CONDITIONS }),
+      ...(this.options.esbuild === undefined ? {} : { esbuild: this.options.esbuild }),
+      ...(this.options.wasmURL === undefined ? {} : { wasmURL: this.options.wasmURL }),
+    });
+  }
+
+  /**
+   * Built on the first build rather than in the constructor: the resolver needs the config's
+   * aliases, and reading the config means running it, which cannot happen synchronously.
+   */
+  private bundlerFor(
+    plugins: Plugin[],
+    aliases: NonNullable<Awaited<ReturnType<ConfigLoader['load']>>['aliases']>,
+  ): Bundler {
+    if (this.bundler) return this.bundler;
+
+    const { conditions = DEFAULT_CONDITIONS, esbuild, wasmURL } = this.options;
+    const resolver = new NodeResolver({ vfs: this.vfs, conditions, aliases });
+
+    this.bundler = new EsbuildBundler({
+      vfs: this.vfs,
+      resolver,
+      ...(wasmURL === undefined ? {} : { wasmURL }),
+      ...(esbuild === undefined ? {} : { esbuild }),
+      container: new PluginContainer({
+        vfs: this.vfs,
+        resolve: (source, importer) =>
+          tryResolve(resolver, { specifier: source, importer }),
+        plugins: [
+          ...(this.options.plugins ?? []),
+          ...plugins,
+          tailwindPlugin(),
+          sassPlugin(),
+        ],
+      }),
+    });
+
+    return this.bundler;
+  }
+
+  private reset(): void {
+    this.config.invalidate();
+    if (!this.options.bundler) this.bundler = undefined;
   }
 }

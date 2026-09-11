@@ -1,7 +1,9 @@
 export { NodelessProject } from './nodeless-project.class.js';
+export { sassPlugin, tailwindPlugin } from './plugins/index.js';
 
 export type { NodelessError } from './errors/nodeless-error.class.js';
 export type {
+  AliasEntry,
   BuildFailure,
   BuildMessage,
   BuildMode,
@@ -9,7 +11,6 @@ export type {
   BuildResult,
   BuildSuccess,
   Bundler,
-  SourceTransform,
   Disposer,
   EsbuildApi,
   EsbuildPlugin,
@@ -19,14 +20,21 @@ export type {
   InstallOptions,
   InstallResult,
   Installer,
+  LoadedConfig,
   Lockfile,
   LockfileEntry,
   NodelessProjectOptions,
   PackageCache,
+  Plugin,
+  PluginContext,
+  PluginLoadResult,
+  PluginResolveResult,
+  PluginTransformResult,
+  ResolvedConfig,
   RmOptions,
-  TransformInput,
+  Runtime,
+  RuntimeModule,
   TransformLoader,
-  TransformResult,
   Vfs,
   VfsSnapshot,
   VfsWatchEvent,
