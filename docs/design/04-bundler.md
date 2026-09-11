@@ -23,51 +23,63 @@ scopes the class names and hands the importer a map from the original name to th
 esbuild says nothing when you read a class the stylesheet never defined — it is simply
 `undefined` at runtime. That is a trap worth knowing, and there is a test pinning it.
 
-A transform runs over the file **before** esbuild parses it, CSS modules included. What it gets
-and why is in the section below.
+A plugin runs over the file **before** esbuild parses it, CSS modules included. What it gets and
+why is in the section below.
 
-## Transforms
+## Plugins
 
-Vite does not know about Tailwind either. The project declares `@tailwindcss/vite` and Vite
+Vite does not know about Tailwind. The project declares `@tailwindcss/vite` and Vite
 **executes that plugin**. Every toolchain arrives that way: Sass, MDX, SVGR, Vue.
 
-This library cannot execute project code, so that path is closed by construction. What is left
-is a table. A `SourceTransform` is three things:
+This library takes the same path now, for the same reason — see
+[`07-the-two-graphs.md`](07-the-two-graphs.md) for why executing the config graph does not
+break the premise. What the bundler sees is a `PluginContainer` holding the Rollup and Vite
+hook shape:
 
 ```ts
-interface SourceTransform {
+interface Plugin {
   name: string;
-  stage: 'language' | 'content';
-  matches(file: { path: string; content: string }): boolean;
-  apply(file: TransformInput): Promise<TransformResult>;
+  enforce?: 'pre' | 'post';
+  configResolved?(config: ResolvedConfig): void | Promise<void>;
+  resolveId?(source: string, importer: string): PluginResolveResult;
+  load?(id: string): PluginLoadResult;
+  transform?(code: string, id: string): PluginTransformResult;
 }
 ```
 
-**It is a pipeline, not a switch**, and getting that wrong was a real bug. A `.scss` file that
-also uses `@apply` needs Sass and then Tailwind; picking one of them meant Tailwind claimed the
-file and choked on `$pad: 1rem;`.
+`resolveId` and `load` **stop at the first plugin that claims the module**; `transform` is a
+**pipeline** where every plugin sees the last one's output. That asymmetry is the protocol, not
+a shortcut: one module has one source and any number of rewrites.
 
-One `language` transform runs, because a file is written in one language. Then every `content`
-transform that claims the result runs in order, each seeing what the one before it produced.
-`transforms` from the options come first within their stage, so a caller can pre-empt.
+Getting the pipeline wrong was a real bug twice. A `.scss` file that also uses `@apply` needs
+Sass and then Tailwind; picking one of them meant Tailwind claimed the file and choked on
+`$pad: 1rem;`. The second time, both built-ins were `enforce: 'post'` and Tailwind was declared
+first, so it ate the `@use` line before Sass ever saw it.
 
-`apply` gets the file, the whole VFS and a `resolve` rooted at that file. The VFS is there
-because a scanner needs the sources; `resolve` is there because a transform also has to find its
-own entry, and without it each one would reimplement node resolution.
+`this` is the plugin context: the whole VFS, because a scanner needs the sources, and a
+`resolve` rooted at the file, because a plugin also has to find its own entry and without it
+each one would reimplement Node resolution.
 
-Two ship today, and they are the same shape. **Tailwind is not a special case**, it is a row:
+Order is callers first, then the project config's, then the built-ins:
 
-| Transform  | Claims                                 | Peer          |
+| Plugin     | Claims                                 | Peer          |
 | ---------- | -------------------------------------- | ------------- |
-| `tailwind` | a stylesheet using Tailwind directives | `tailwindcss` |
 | `sass`     | `.scss` and `.sass`                    | `sass`        |
+| `tailwind` | a stylesheet using Tailwind directives | `tailwindcss` |
 
-`transforms` in the options run before them within the same stage, so a caller can pre-empt.
+Both are `enforce: 'post'`, so a config bringing `@tailwindcss/vite` leaves them nothing to
+claim — the compiled CSS it emits has no directives left in it.
 
-### When a transform is the wrong level
+**`onResolve` stays synchronous unless a plugin implements `resolveId`.** Resolution runs
+thousands of times per build and an async handler costs a microtask on each one, which is worth
+about 10 ms on the React scaffold. `PluginContainer.resolvesIds()` answers once and the bundler
+registers the handler accordingly.
 
-esbuild's own plugins go through as `plugins`, ahead of the VFS one. That is the lower escape
-hatch: `onResolve` and `onLoad` instead of a whole-file rewrite, and an API people already know.
+### When a plugin is the wrong level
+
+esbuild's own plugins go through `build({ plugins })`, ahead of the VFS one. That is the lower
+escape hatch: `onResolve` and `onLoad` against esbuild directly, for when the Rollup shape is
+not what you want.
 
 ### What it costs to add one
 
