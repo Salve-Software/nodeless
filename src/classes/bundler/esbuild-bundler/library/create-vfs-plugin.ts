@@ -15,7 +15,7 @@ export function createVfsPlugin({
   resolver,
   external,
   warnings,
-  cssTransform,
+  transforms,
   cdn,
   assetLimit,
 }: VfsPluginOptions): Plugin {
@@ -64,7 +64,7 @@ export function createVfsPlugin({
           {
             vfs,
             resolver,
-            ...(cssTransform ? { cssTransform } : {}),
+            ...(transforms ? { transforms } : {}),
             ...(assetLimit === undefined ? {} : { assetLimit }),
           },
           args.path,

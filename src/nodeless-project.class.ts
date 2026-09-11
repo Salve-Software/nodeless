@@ -14,9 +14,9 @@ import type {
   WatchOptions,
 } from '@/types/index.js';
 import { EsbuildBundler } from '@/classes/bundler/index.js';
-import { TailwindTransform } from '@/classes/css-transform/index.js';
 import { RegistryInstaller } from '@/classes/installer/index.js';
 import { NodeResolver } from '@/classes/resolver/index.js';
+import { SassTransform, TailwindTransform } from '@/classes/transform/index.js';
 import { MemoryVfs } from '@/classes/vfs/index.js';
 import { DEFAULT_CONDITIONS, DEFAULT_DEBOUNCE_MS } from '@/constants/index.js';
 
@@ -35,7 +35,7 @@ export class NodelessProject {
     conditions = DEFAULT_CONDITIONS,
     wasmURL,
     esbuild,
-    cssTransform,
+    transforms = [],
     registryUrl,
     packageCache,
     fetch: fetchImpl,
@@ -50,7 +50,7 @@ export class NodelessProject {
         resolver: new NodeResolver({ vfs: this.vfs, conditions }),
         ...(wasmURL === undefined ? {} : { wasmURL }),
         ...(esbuild === undefined ? {} : { esbuild }),
-        cssTransform: cssTransform ?? new TailwindTransform().transform,
+        transforms: [...transforms, new TailwindTransform(), new SassTransform()],
       });
     this.installer =
       installer ??

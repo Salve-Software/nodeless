@@ -1,38 +1,42 @@
 import type { VfsPluginOptions } from '@/classes/bundler/esbuild-bundler/types/index.js';
 import type { OnLoadResult } from 'esbuild-wasm';
-import {
-  CSS_LOADERS,
-  DEFAULT_ASSET_LIMIT,
-} from '@/classes/bundler/esbuild-bundler/constants/index.js';
+import { DEFAULT_ASSET_LIMIT } from '@/classes/bundler/esbuild-bundler/constants/index.js';
+import { applyTransforms } from '@/classes/transform/library/index.js';
 import { dirname } from '@/library/index.js';
 import { inlineOrEmit } from './inline-or-emit.js';
 import { loaderFor } from './loader-for.js';
+import { transformableText } from './transformable-text.js';
 
-/** Reads one file for esbuild, giving a `cssTransform` its shot at any stylesheet. */
+/** Reads one file for esbuild, after whichever transform claims it has had its turn. */
 export async function loadFromVfs(
   {
     vfs,
     resolver,
-    cssTransform,
+    transforms = [],
     assetLimit = DEFAULT_ASSET_LIMIT,
-  }: Pick<VfsPluginOptions, 'vfs' | 'resolver' | 'cssTransform' | 'assetLimit'>,
+  }: Pick<VfsPluginOptions, 'vfs' | 'resolver' | 'transforms' | 'assetLimit'>,
   path: string,
 ): Promise<OnLoadResult> {
   const size = vfs.stat(path)?.size ?? 0;
   const loader = inlineOrEmit(loaderFor(path), { size, limit: assetLimit });
   const resolveDir = dirname(path);
+  const content = transformableText(vfs, { path, loader });
 
-  if (cssTransform && CSS_LOADERS.has(loader)) {
-    return {
-      contents: await cssTransform({
-        path,
-        css: vfs.readText(path),
-        vfs,
-        resolve: (specifier) => resolveFrom(resolver, { specifier, importer: path }),
-      }),
-      loader,
-      resolveDir,
-    };
+  if (content !== undefined) {
+    const transformed = await applyTransforms(transforms, {
+      path,
+      content,
+      vfs,
+      resolve: (specifier) => resolveFrom(resolver, { specifier, importer: path }),
+    });
+
+    if (transformed) {
+      return {
+        contents: transformed.content,
+        loader: transformed.loader ?? loader,
+        resolveDir,
+      };
+    }
   }
 
   return { contents: vfs.readFile(path), loader, resolveDir };

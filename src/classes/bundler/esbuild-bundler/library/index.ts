@@ -15,4 +15,5 @@ export * from './render-index-html.js';
 export * from './resolve-entry.js';
 export * from './to-build-message.js';
 export * from './to-failure-messages.js';
+export * from './transformable-text.js';
 export * from './unwrap-esbuild.js';

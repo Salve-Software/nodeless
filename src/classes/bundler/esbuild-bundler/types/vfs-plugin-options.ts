@@ -1,8 +1,8 @@
 import type {
   BuildMessage,
   CdnOptions,
-  CssTransform,
   Resolver,
+  SourceTransform,
   Vfs,
 } from '@/types/index.js';
 
@@ -12,7 +12,7 @@ export interface VfsPluginOptions {
   resolver: Resolver;
   external: string[];
   warnings: BuildMessage[];
-  cssTransform?: CssTransform;
+  transforms?: SourceTransform[];
   cdn?: CdnOptions;
   assetLimit?: number;
 }

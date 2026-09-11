@@ -1,4 +1,4 @@
-import type { BuildResult, FileInput } from '@/types/index.js';
+import type { BuildResult, FileInput, SourceTransform } from '@/types/index.js';
 import { describe, expect, it } from 'vitest';
 import { EsbuildBundler } from '@/classes/bundler/index.js';
 import { NodeResolver } from '@/classes/resolver/index.js';
@@ -208,10 +208,8 @@ describe('EsbuildBundler, css modules', () => {
   });
 });
 
-describe('EsbuildBundler, css transform', () => {
-  function bundlerWith(
-    cssTransform: (input: { css: string }) => string | Promise<string>,
-  ) {
+describe('EsbuildBundler, transforms', () => {
+  function bundlerWith(apply: SourceTransform['apply']) {
     const vfs = new MemoryVfs({
       files: {
         '/src/main.ts': "import './app.css';\nexport const x = 1;",
@@ -219,17 +217,23 @@ describe('EsbuildBundler, css transform', () => {
       },
     });
 
-    return new EsbuildBundler({ vfs, resolver: new NodeResolver({ vfs }), cssTransform });
+    return new EsbuildBundler({
+      vfs,
+      resolver: new NodeResolver({ vfs }),
+      transforms: [{ name: 'fake', matches: ({ path }) => path.endsWith('.css'), apply }],
+    });
   }
 
   it('lets a transform rewrite the stylesheet before esbuild parses it', async () => {
-    const result = await bundlerWith(() => 'body { color: red; }').build();
+    const result = await bundlerWith(async () => ({
+      content: 'body { color: red; }',
+    })).build();
 
     expect(text(result, 'bundle.css')).toContain('red');
   });
 
   // Tailwind has to see every stylesheet, not just the entry one.
-  it('runs once per stylesheet in the graph', async () => {
+  it('runs once per file in the graph', async () => {
     const seen: string[] = [];
     const vfs = new MemoryVfs({
       files: {
@@ -241,11 +245,17 @@ describe('EsbuildBundler, css transform', () => {
     const bundler = new EsbuildBundler({
       vfs,
       resolver: new NodeResolver({ vfs }),
-      cssTransform: ({ path, css }) => {
-        seen.push(path);
+      transforms: [
+        {
+          name: 'spy',
+          matches: ({ path }) => path.endsWith('.css'),
+          apply: async ({ path, content }) => {
+            seen.push(path);
 
-        return css;
-      },
+            return { content };
+          },
+        },
+      ],
     });
 
     await bundler.build();

@@ -1,4 +1,4 @@
-import type { CssTransform, Vfs } from '@/types/index.js';
+import type { SourceTransform, Vfs } from '@/types/index.js';
 import { describe, expect, it, vi } from 'vitest';
 import { loadFromVfs } from '@/classes/bundler/esbuild-bundler/library/index.js';
 import { NodeResolver } from '@/classes/resolver/index.js';
@@ -15,10 +15,14 @@ const files = {
   '/node_modules/pkg/s.css': '.from-pkg {}',
 };
 
-function options(extra: { cssTransform?: CssTransform; assetLimit?: number } = {}) {
+function options(extra: { transforms?: SourceTransform[]; assetLimit?: number } = {}) {
   const vfs: Vfs = new MemoryVfs({ files });
 
   return { vfs, resolver: new NodeResolver({ vfs }), ...extra };
+}
+
+function transform(apply: SourceTransform['apply']): SourceTransform {
+  return { name: 'fake', matches: () => true, apply };
 }
 
 function contentsOf(result: { contents?: string | Uint8Array }): string {
@@ -38,30 +42,56 @@ describe('loadFromVfs', () => {
     expect(result.resolveDir).toBe('/src');
   });
 
-  it('runs the css transform over a stylesheet', async () => {
-    const cssTransform = vi.fn(({ css }: { css: string }) => css.replace('red', 'blue'));
-    const result = await loadFromVfs(options({ cssTransform }), '/src/a.css');
+  it('lets a transform rewrite the file', async () => {
+    const result = await loadFromVfs(
+      options({
+        transforms: [
+          transform(async ({ content }) => ({ content: content.replace('red', 'blue') })),
+        ],
+      }),
+      '/src/a.css',
+    );
 
     expect(contentsOf(result)).toBe('body { color: blue; }');
-    expect(cssTransform).toHaveBeenCalledWith(
-      expect.objectContaining({ path: '/src/a.css', css: 'body { color: red; }' }),
+  });
+
+  it('a transform can change the loader, which is how scss becomes css', async () => {
+    const result = await loadFromVfs(
+      options({
+        transforms: [transform(async () => ({ content: '.a{}', loader: 'css' }))],
+      }),
+      '/src/a.ts',
     );
+
+    expect(result.loader).toBe('css');
   });
 
   // Tailwind scans the sources for class names, so it needs more than this one file.
   it('hands the transform the whole vfs', async () => {
     const result = await loadFromVfs(
-      options({ cssTransform: ({ vfs }) => `/* ${String(vfs.paths().length)} files */` }),
+      options({
+        transforms: [
+          transform(async ({ vfs }) => ({
+            content: `/* ${String(vfs.paths().length)} */`,
+          })),
+        ],
+      }),
       '/src/a.css',
     );
 
-    expect(contentsOf(result)).toContain('files */');
+    expect(contentsOf(result)).toContain('/*');
   });
 
   // Without this a transform has to reimplement node resolution to find its own entry.
-  it('hands the transform a resolver rooted at the stylesheet', async () => {
+  it('hands the transform a resolver rooted at the file', async () => {
     const result = await loadFromVfs(
-      options({ cssTransform: ({ resolve }) => `/* ${String(resolve('pkg'))} */` }),
+      options({
+        transforms: [
+          transform(async ({ resolve }) => ({
+            content: `/* ${String(resolve('pkg'))} */`,
+          })),
+        ],
+      }),
       '/src/a.css',
     );
 
@@ -70,38 +100,32 @@ describe('loadFromVfs', () => {
 
   it('resolving something that does not exist gives undefined, not a throw', async () => {
     const result = await loadFromVfs(
-      options({ cssTransform: ({ resolve }) => `/* ${String(resolve('gone'))} */` }),
+      options({
+        transforms: [
+          transform(async ({ resolve }) => ({
+            content: `/* ${String(resolve('gone'))} */`,
+          })),
+        ],
+      }),
       '/src/a.css',
     );
 
     expect(contentsOf(result)).toBe('/* undefined */');
   });
 
-  it('runs the css transform over a css module too', async () => {
-    const result = await loadFromVfs(
-      options({ cssTransform: () => '.x { color: blue; }' }),
-      '/src/a.module.css',
-    );
+  // Handing an image to a text transform would corrupt it.
+  it('never offers an asset to a transform', async () => {
+    const apply = vi.fn(async () => ({ content: 'never' }));
 
-    expect(result.loader).toBe('local-css');
-    expect(contentsOf(result)).toBe('.x { color: blue; }');
+    await loadFromVfs(options({ transforms: [transform(apply)] }), '/src/small.png');
+
+    expect(apply).not.toHaveBeenCalled();
   });
 
-  it('leaves everything that is not a stylesheet alone', async () => {
-    const cssTransform = vi.fn(() => 'never');
-
-    await loadFromVfs(options({ cssTransform }), '/src/a.ts');
-
-    expect(cssTransform).not.toHaveBeenCalled();
-  });
-
-  it('awaits an async transform', async () => {
-    const result = await loadFromVfs(
-      options({ cssTransform: async () => 'done' }),
-      '/src/a.css',
+  it('no transform at all leaves the file alone', async () => {
+    expect(contentsOf(await loadFromVfs(options(), '/src/a.css'))).toBe(
+      'body { color: red; }',
     );
-
-    expect(contentsOf(result)).toBe('done');
   });
 });
 
