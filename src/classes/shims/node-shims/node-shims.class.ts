@@ -66,6 +66,8 @@ export class NodeShims {
     this.modules['path/posix'] = this.modules['path'] ?? {};
     this.modules['util/types'] = this.namespaceOf('util', 'types');
     this.modules['timers/promises'] = this.modules['timers'] ?? {};
+    // Registered before the shim is built, so `isBuiltin('module')` is true of itself.
+    this.modules['module'] = {};
     this.modules['module'] = createModuleShim({ require, builtins: this.names() });
   }
 
