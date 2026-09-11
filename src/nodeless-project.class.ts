@@ -14,6 +14,7 @@ import type {
   WatchOptions,
 } from '@/types/index.js';
 import { EsbuildBundler } from '@/classes/bundler/index.js';
+import { TailwindTransform } from '@/classes/css-transform/index.js';
 import { RegistryInstaller } from '@/classes/installer/index.js';
 import { NodeResolver } from '@/classes/resolver/index.js';
 import { MemoryVfs } from '@/classes/vfs/index.js';
@@ -49,7 +50,7 @@ export class NodelessProject {
         resolver: new NodeResolver({ vfs: this.vfs, conditions }),
         ...(wasmURL === undefined ? {} : { wasmURL }),
         ...(esbuild === undefined ? {} : { esbuild }),
-        ...(cssTransform === undefined ? {} : { cssTransform }),
+        cssTransform: cssTransform ?? new TailwindTransform().transform,
       });
     this.installer =
       installer ??

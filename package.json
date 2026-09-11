@@ -68,6 +68,14 @@
     "resolve.exports": "^2.0.3",
     "semver": "^7.8.5"
   },
+  "peerDependencies": {
+    "tailwindcss": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "tailwindcss": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@semantic-release/changelog": "^6.0.3",
