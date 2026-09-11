@@ -52,8 +52,8 @@ if (result.ok) {
 - **Works in the browser.** A headless Chromium job in CI proves it, end to end.
 - **Errors are data.** Failed builds return `{ ok: false, errors }` with file, line and column.
 - **Fast enough to skip the dev server.** About 200 ms for a React scaffold.
-- **Tailwind just works.** A stylesheet with `@import 'tailwindcss'` is compiled, no
-  configuration. CSS modules are built in too.
+- **Toolchains just work.** Tailwind and Sass compile with no configuration, as optional peers
+  loaded only when a file needs them. CSS modules are built in too.
 - **Preview before installing.** `build({ cdn })` points unresolved imports at a CDN.
 
 ## Install
@@ -76,16 +76,20 @@ const result = await project.build({ mode: 'development' });
 `files` comes back as `Record<string, Uint8Array>`. `build()` never writes to the VFS, which is
 what lets `watch()` run without a build triggering itself.
 
-| Option       | Default                            |
-| ------------ | ---------------------------------- |
-| `entry`      | the first `src/main.*` that exists |
-| `mode`       | `'production'`                     |
-| `html`       | `/index.html`                      |
-| `outdir`     | `/dist`                            |
-| `target`     | `'es2020'`                         |
-| `conditions` | `browser, import, module, default` |
-| `external`   | `[]`                               |
-| `cdn`        | off                                |
+| Option       | Default                              |
+| ------------ | ------------------------------------ |
+| `entry`      | the first `src/main.*` that exists   |
+| `mode`       | `'production'`                       |
+| `html`       | `/index.html`                        |
+| `outdir`     | `/dist`                              |
+| `target`     | `'es2020'`                           |
+| `conditions` | `browser, import, module, default`   |
+| `external`   | `[]`                                 |
+| `cdn`        | off                                  |
+| `publicDir`  | `/public`                            |
+| `assetLimit` | `4096` bytes                         |
+| `env`        | `{}`, merged into `import.meta.env`  |
+| `transforms` | `[]`, tried before the built-in ones |
 
 `mode: 'development'` turns minification off and inline sourcemaps on.
 
@@ -95,6 +99,47 @@ with `MODE`, `DEV`, `PROD`, `BASE_URL` and `SSR`, plus whatever `env` adds.
 
 `compilerOptions.paths` from `/tsconfig.json` are honoured, so `@/components/button` resolves
 the way TypeScript would.
+
+### Toolchains
+
+Nothing to configure. A stylesheet using Tailwind directives is compiled, and so is a `.scss`
+file:
+
+```ts
+await project.install({ dev: ['tailwindcss'] });
+await project.build();
+```
+
+Both are **optional peer dependencies**, imported only once a file is found to need them. A
+project using neither loads neither. The engine comes from the package sitting next to nodeless;
+the files come from the VFS, which is why Tailwind has to be installed into the project like any
+other dependency.
+
+Tailwind's `@plugin` and `@config` are refused: they point at JavaScript, and running the
+project's code is the one thing this library does not do.
+
+### Adding your own
+
+A transform is three things, and the built-in ones are no different:
+
+```ts
+new NodelessProject({
+  files,
+  transforms: [
+    {
+      name: 'svgr',
+      matches: ({ path }) => path.endsWith('.svg'),
+      apply: async ({ content }) => ({
+        content: toReactComponent(content),
+        loader: 'tsx',
+      }),
+    },
+  ],
+});
+```
+
+Yours are tried first, so they can claim a file before the built-ins do. `apply` gets the file,
+the whole VFS and a `resolve` rooted at that file.
 
 ### Install
 

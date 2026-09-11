@@ -3,8 +3,9 @@
 ## What the library does
 
 **Pure-JS dependencies** — React, ReactDOM, UI libraries like Radix and shadcn, utilities — with
-TS, TSX, JS, JSX, plain CSS, CSS modules, JSON and assets. Tailwind and PostCSS plug in through
-`cssTransform` without becoming dependencies of this package.
+TS, TSX, JS, JSX, plain CSS, CSS modules, Sass, Tailwind, JSON and assets. Sass and Tailwind are
+optional peers loaded only when a file needs them; anything else plugs in through `transforms`
+without becoming a dependency of this package.
 
 ## What it does not do, and why
 

@@ -23,50 +23,55 @@ scopes the class names and hands the importer a map from the original name to th
 esbuild says nothing when you read a class the stylesheet never defined — it is simply
 `undefined` at runtime. That is a trap worth knowing, and there is a test pinning it.
 
-`cssTransform` runs over every stylesheet, modules included, **before** esbuild parses it. It
-gets three things: the file, the whole VFS, and a `resolve` rooted at that file.
+A transform runs over the file **before** esbuild parses it, CSS modules included. What it gets
+and why is in the section below.
 
-The VFS is there because the interesting consumer is Tailwind, and Tailwind has to scan the
-sources for class names. `resolve` is there because it also has to find its own entry, and
-without it every transform would reimplement node resolution.
+## Transforms
 
-## Tailwind is the default, not a dependency
+Vite does not know about Tailwind either. The project declares `@tailwindcss/vite` and Vite
+**executes that plugin**. Every toolchain arrives that way: Sass, MDX, SVGR, Vue.
 
-A stylesheet carrying `@import 'tailwindcss'` or any other Tailwind directive is compiled with
-no configuration, because the promise is "it builds your project", and half of the projects use
-Tailwind. Making that work only for callers willing to write forty lines of wiring is a kit, not
-a build.
+This library cannot execute project code, so that path is closed by construction. What is left
+is a table. A `SourceTransform` is three things:
 
-It does not cost the other half anything. `tailwindcss` is an **optional peer**, and the import
-only happens once a stylesheet is found to need it. A project with plain CSS never loads it.
+```ts
+interface SourceTransform {
+  name: string;
+  matches(file: { path: string; content: string }): boolean;
+  apply(file: TransformInput): Promise<TransformResult>;
+}
+```
 
-The split that makes this honest:
+`apply` gets the file, the whole VFS and a `resolve` rooted at that file. The VFS is there
+because a scanner needs the sources; `resolve` is there because a transform also has to find its
+own entry, and without it each one would reimplement node resolution.
 
-- **the engine comes from the host**, the peer package, which is our dependency and our trust
-  level, the same as esbuild;
-- **the stylesheets come from the VFS**, so Tailwind has to be installed into the project like
-  any other dependency. `install({ dev: ['tailwindcss'] })`.
+Two ship today, and they are the same shape. **Tailwind is not a special case**, it is a row:
 
-Executing the project's own copy would be executing project code, which is the one line this
-library does not cross. The same reasoning refuses `@plugin` and `@config`: they point at
-JavaScript.
+| Transform  | Claims                                 | Peer          |
+| ---------- | -------------------------------------- | ------------- |
+| `tailwind` | a stylesheet using Tailwind directives | `tailwindcss` |
+| `sass`     | `.scss` and `.sass`                    | `sass`        |
 
-Tailwind's own scanner is a native Rust binary. It is avoided by pulling candidate tokens out of
-the VFS and handing them over, which is a superset of what `@source` would have asked for.
+`transforms` in the options is tried before them, so a caller can claim a file first.
 
-`cssTransform` still replaces the whole thing for anyone who wants PostCSS or something else.
+### What it costs to add one
 
-## Parity with what a Vite project expects
+Nothing, for anyone not using it. Each compiler is an **optional peer**, imported only once a
+file is found to need it. A project with plain CSS loads neither.
 
-Three things a scaffold assumes, which a bundler alone does not give you:
+The bar for shipping one is that the compiler is pure JavaScript with a callback API a VFS can
+answer. Both of these are: `compile(css, { loadStylesheet })` and
+`compileString(source, { importers })` never touch a filesystem. Anything needing a native
+binary or the project's own config file does not qualify, and stays a caller's `transforms`
+entry.
 
-- **`import.meta.env`** is defined rather than left alone. Untouched it is `undefined` in a plain
-  module, so the first line reading an env throws at runtime after a build that passed.
-- **`public/`** is copied to the output. The scaffold HTML links straight into it, and without
-  the copy the preview serves 404. A real build output wins a name collision.
-- **Assets over `assetLimit`** become their own file under `assets/` instead of a data URL. At
-  4 kB, the same threshold Vite uses. Everything inlined means a 2 MB image costs a third more
-  in the bundle and cannot be cached apart from the code.
+### Where the line is
+
+The engine comes from the **host** peer, our dependency at our trust level. The files come from
+the **VFS**. Running the project's own copy of Tailwind would be running project code, which is
+the one thing this library does not do. The same reasoning refuses Tailwind's `@plugin` and
+`@config`: they point at JavaScript.
 
 ## Building without installing
 

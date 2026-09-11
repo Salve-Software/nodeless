@@ -15,7 +15,7 @@ for (const name of [...VENDORED_PACKAGES, 'tailwindcss']) {
   );
 }
 
-// No cssTransform, no options. The project uses Tailwind, so the build uses Tailwind.
+// No options at all. The project uses Tailwind, so the build uses Tailwind.
 const project = new NodelessProject({ files });
 
 const startedAt = Date.now();

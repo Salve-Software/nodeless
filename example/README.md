@@ -54,8 +54,10 @@ Builds a Tailwind v4 project. The script passes **no options at all**: a stylesh
 Tailwind directives is compiled because that is what the project asked for. 6.9 kB of utilities
 in ~390 ms, with `@theme`, `@layer` and responsive variants.
 
-The only requirement is that `tailwindcss` is in the VFS, like any other dependency. The engine
-comes from the optional peer next to nodeless; the stylesheets come from the project.
+Tailwind is not special here. It is one row in a table of transforms, next to Sass, and both are
+optional peers loaded only when a file needs them. The engine comes from the peer next to
+nodeless; the files come from the VFS, which is why `tailwindcss` has to be installed into the
+project like any other dependency.
 
 ## In the browser
 
