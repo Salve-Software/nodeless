@@ -3,9 +3,11 @@
 ## What the library does
 
 **Pure-JS dependencies** — React, ReactDOM, UI libraries like Radix and shadcn, utilities — with
-TS, TSX, JS, JSX, plain CSS, CSS modules, Sass, Tailwind, JSON and assets. Sass and Tailwind are
-optional peers loaded only when a file needs them; anything else plugs in through `transforms`
-without becoming a dependency of this package.
+TS, TSX, JS, JSX, plain CSS, CSS modules, Sass, Tailwind, JSON and assets.
+
+**And the project's own toolchain.** A `vite.config.ts` is executed and its plugins run, so a
+framework nodeless has never heard of costs no code here. See
+[`07-the-two-graphs.md`](07-the-two-graphs.md) for why that does not break the premise.
 
 ## What it does not do, and why
 
@@ -21,14 +23,14 @@ without becoming a dependency of this package.
 the library executed code, it would need isolation, and isolation is precisely the cost it
 exists to remove.
 
-**Tailwind v4 works, and this document used to say it did not.** The claim was that it needs
-lightningcss. That is true of `@tailwindcss/node`, `/postcss` and `/vite`, the integrations. The
-`tailwindcss` package itself has **zero dependencies**: `compile(css, { loadStylesheet })` is
-pure JavaScript and reads through a callback, which is exactly what a VFS can answer.
+**Tailwind v4 works two ways now.** The built-in plugin calls `compile(css, { loadStylesheet })`
+— pure JavaScript, reading through a callback a VFS can answer — and feeds it candidates scraped
+out of the VFS, because Tailwind's own scanner is a native binary. That path refuses `@plugin`
+and `@config`.
 
-What it does need is candidates, the list of class names in use. Tailwind's own scanner is the
-native Rust binary; feeding it tokens pulled out of the VFS avoids it entirely. `example/tailwind`
-does that in about forty lines and runs in CI.
+The other way is to put `@tailwindcss/vite` in the project's config, which goes through the
+runtime and can run those. Which of the two is available depends on whether the integration
+pulls in a native dependency, and that is now a property of the package rather than of nodeless.
 
 **React Refresh is a decision, not a gap.** It needs a Babel-grade transform — `react-refresh`
 ships a Babel plugin, and esbuild does not do that kind of AST work. What it buys is preserved

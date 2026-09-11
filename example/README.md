@@ -7,11 +7,13 @@ the registry.
 example/
 ├── app/                    ← the offline project: react only, read from disk
 ├── install/                ← the networked project: radix, lucide, zustand, router, zod
-├── tailwind/               ← the same scaffold, styled with tailwind v3
+├── tailwind/               ← the same scaffold, styled with tailwind v4
+├── vite/                   ← a project with a vite.config.ts and a plugin of its own
 ├── read-project-files.ts   ← reads app/ + react/react-dom/scheduler into a FileInput
 ├── node/build.ts           ← npm run example
 ├── node/install.ts         ← npm run example:install
 ├── node/tailwind.ts        ← npm run example:tailwind
+├── node/vite.ts            ← npm run example:vite
 └── browser/index.html      ← npm run example:browser
 ```
 
@@ -54,10 +56,30 @@ Builds a Tailwind v4 project. The script passes **no options at all**: a stylesh
 Tailwind directives is compiled because that is what the project asked for. 6.9 kB of utilities
 in ~390 ms, with `@theme`, `@layer` and responsive variants.
 
-Tailwind is not special here. It is one row in a table of transforms, next to Sass, and both are
+Tailwind is not special here. It is one plugin among any others, next to Sass, and both are
 optional peers loaded only when a file needs them. The engine comes from the peer next to
 nodeless; the files come from the VFS, which is why `tailwindcss` has to be installed into the
 project like any other dependency.
+
+## With the project's own config
+
+```bash
+npm run example:vite
+```
+
+`example/vite` ships a `vite.config.ts`, and four things end up in the bundle that **nodeless
+has no code for**:
+
+| In the bundle          | Where it came from                                             |
+| ---------------------- | -------------------------------------------------------------- |
+| a banner comment       | `plugins/banner.js`, which reads `/package.json` via `node:fs` |
+| a `builtAt` constant   | a virtual module with no file behind it                        |
+| `__BUILD_MODE__`       | `define`, from `defineConfig(({ mode }) => …)`                 |
+| `~/title.js` resolving | `resolve.alias`                                                |
+
+The banner plugin is the one to look at. It calls `readFileSync('/package.json')` and gets the
+virtual filesystem, because every `node:fs` in the config graph was rewritten to a shim before
+a line of it ran. The same file works unchanged in a browser tab, where there is no disk at all.
 
 ## In the browser
 

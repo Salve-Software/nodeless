@@ -1,7 +1,7 @@
 <h1 align="center">nodeless</h1>
 
 <p align="center">
-  <strong>npm install and a React build, without Node</strong>
+  <strong>npm install and a frontend build, in-process</strong>
 </p>
 
 <p align="center">
@@ -12,13 +12,17 @@
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
 </p>
 
-Give it a map of files. It installs the dependencies from npm and hands back `index.html`,
-`bundle.js` and `bundle.css`, all in memory and in the same process. No shell, no filesystem, no
-child process, no VM.
+Give it a map of files. It installs the dependencies from npm, runs the project's own
+`vite.config.ts` and its plugins, and hands back `index.html`, `bundle.js` and `bundle.css` —
+all in memory and in the same process. No shell, no filesystem, no child process, no VM.
 
-This works because a bundler never runs the code it bundles, and unpacking a tarball doesn't
-either. The container people spin up to build on demand is guarding a step that was already
-inert. Drop it and the same code runs on your server and in your user's browser.
+It works because a project has two module graphs and they are disjoint. The **application**
+graph — your `src/` and the packages it imports — is read as text and never executed, because
+resolving an import and transpiling TSX do not run anything. The **config** graph — your
+`vite.config.ts` and the plugins it imports — is executed, in a sandbox where `node:fs` is the
+virtual filesystem and there is no disk to reach.
+
+That second part is why a toolchain nodeless has never heard of costs no code here.
 
 <p align="center">
   <img src="./assets/playground.png" alt="An editor on the left, the built app running on the right" width="900">
@@ -47,13 +51,15 @@ if (result.ok) {
 
 ## Features
 
-- **Nothing gets executed.** Not your files, not `postinstall`, not `package.json` scripts.
+- **Your app's code never runs.** Not during install, not during build. No `postinstall`, no
+  `package.json` scripts.
+- **Your Vite config does run.** Plugins from npm, virtual modules, `define`, `resolve.alias`
+  and `defineConfig(({ mode }) => …)` all work, without nodeless knowing what any of them are.
 - **A real npm install.** Semver ranges, integrity checks, npm's flat layout, a lockfile.
 - **Works in the browser.** A headless Chromium job in CI proves it, end to end.
 - **Errors are data.** Failed builds return `{ ok: false, errors }` with file, line and column.
 - **Fast enough to skip the dev server.** About 200 ms for a React scaffold.
-- **Toolchains just work.** Tailwind and Sass compile with no configuration, as optional peers
-  loaded only when a file needs them. CSS modules are built in too.
+- **Toolchains just work.** Tailwind and Sass compile with no configuration. CSS modules too.
 - **Preview before installing.** `build({ cdn })` points unresolved imports at a CDN.
 
 ## Install
@@ -76,20 +82,20 @@ const result = await project.build({ mode: 'development' });
 `files` comes back as `Record<string, Uint8Array>`. `build()` never writes to the VFS, which is
 what lets `watch()` run without a build triggering itself.
 
-| Option       | Default                              |
-| ------------ | ------------------------------------ |
-| `entry`      | the first `src/main.*` that exists   |
-| `mode`       | `'production'`                       |
-| `html`       | `/index.html`                        |
-| `outdir`     | `/dist`                              |
-| `target`     | `'es2020'`                           |
-| `conditions` | `browser, import, module, default`   |
-| `external`   | `[]`                                 |
-| `cdn`        | off                                  |
-| `publicDir`  | `/public`                            |
-| `assetLimit` | `4096` bytes                         |
-| `env`        | `{}`, merged into `import.meta.env`  |
-| `transforms` | `[]`, tried before the built-in ones |
+| Option       | Default                             |
+| ------------ | ----------------------------------- |
+| `entry`      | the first `src/main.*` that exists  |
+| `mode`       | `'production'`                      |
+| `html`       | `/index.html`                       |
+| `outdir`     | `/dist`                             |
+| `target`     | `'es2020'`                          |
+| `conditions` | `browser, import, module, default`  |
+| `external`   | `[]`                                |
+| `cdn`        | off                                 |
+| `publicDir`  | `/public`                           |
+| `assetLimit` | `4096` bytes                        |
+| `env`        | `{}`, merged into `import.meta.env` |
+| `plugins`    | `[]`, esbuild plugins, run first    |
 
 `mode: 'development'` turns minification off and inline sourcemaps on.
 
@@ -98,7 +104,39 @@ what lets `watch()` run without a build triggering itself.
 with `MODE`, `DEV`, `PROD`, `BASE_URL` and `SSR`, plus whatever `env` adds.
 
 `compilerOptions.paths` from `/tsconfig.json` are honoured, so `@/components/button` resolves
-the way TypeScript would.
+the way TypeScript would. `resolve.alias` from the config wins over them.
+
+### The project's config
+
+If the project has a `vite.config.ts` — or `.mts`, `.js`, `.mjs`, `.cjs`, or a
+`nodeless.config.*` — it is executed and its `plugins`, `define`, `resolve.alias`, `base` and
+`build.outDir` are applied. A project without one builds exactly as it did before, on the same
+code path and at the same cost.
+
+```ts
+// vite.config.ts, in the project you are building
+import react from '@vitejs/plugin-react';
+import { readFileSync } from 'node:fs';
+
+export default ({ mode }) => ({
+  plugins: [react(), { name: 'banner', transform: (code, id) => /* … */ }],
+  define: { __VERSION__: JSON.stringify(JSON.parse(readFileSync('/package.json', 'utf8')).version) },
+  resolve: { alias: { '~': '/src' } },
+});
+```
+
+`node:fs` there is the VFS. `node:path`, `node:url`, `node:process`, `node:crypto`,
+`node:module` and the rest are the same — implemented against the virtual filesystem, not
+forwarded to a real one. `child_process`, `net` and their neighbours import without complaint
+and throw the moment something calls them, so a dead code path cannot take your build down.
+
+The config is run once per mode and cached, so a `watch` rebuild costs what it always did.
+Editing the config file invalidates it, which is why Vite restarts on one too.
+
+**Plugins use the Rollup and Vite hook shape**, which is what the ecosystem already writes
+against: `resolveId`, `load`, `transform`, `configResolved`, and `enforce: 'pre' | 'post'`.
+`resolveId` and `load` stop at the first plugin that claims a module; `transform` is a pipeline.
+`this` is the plugin context, with `vfs` and a `resolve` rooted where you are standing.
 
 ### Toolchains
 
@@ -110,36 +148,34 @@ await project.install({ dev: ['tailwindcss'] });
 await project.build();
 ```
 
-Both are **optional peer dependencies**, imported only once a file is found to need them. A
-project using neither loads neither. The engine comes from the package sitting next to nodeless;
-the files come from the VFS, which is why Tailwind has to be installed into the project like any
-other dependency.
+Both are **optional peer dependencies**, imported only once a file is found to need them, and
+both are ordinary plugins — `enforce: 'post'`, so a config that brings `@tailwindcss/vite`
+leaves them nothing to claim. The engine comes from the package next to nodeless; the files come
+from the VFS, which is why Tailwind has to be installed into the project like any dependency.
 
-Tailwind's `@plugin` and `@config` are refused: they point at JavaScript, and running the
-project's code is the one thing this library does not do.
+The built-in Tailwind plugin refuses `@plugin` and `@config`, because those point at JavaScript
+and it does not run any. Put `@tailwindcss/vite` in a config instead: that path goes through the
+runtime, and it can.
 
 ### Adding your own
 
-A transform is three things, and the built-in ones are no different:
+Pass a plugin to the project, or put one in the config — same shape either way:
 
 ```ts
 new NodelessProject({
   files,
-  transforms: [
+  plugins: [
     {
       name: 'svgr',
-      matches: ({ path }) => path.endsWith('.svg'),
-      apply: async ({ content }) => ({
-        content: toReactComponent(content),
-        loader: 'tsx',
-      }),
+      transform: (code, id) =>
+        id.endsWith('.svg') ? { code: toReactComponent(code), loader: 'tsx' } : null,
     },
   ],
 });
 ```
 
-Yours are tried first, so they can claim a file before the built-ins do. `apply` gets the file,
-the whole VFS and a `resolve` rooted at that file.
+Yours run first, then the project config's, then the built-ins. Returning `null` means "not
+mine" and passes the module along.
 
 ### Install
 
@@ -196,10 +232,20 @@ there, and renders the result. The other examples live in [`example/`](example/R
 
 ## What it doesn't do
 
-Native bindings, `package.json` scripts, `postinstall`, Rolldown, lightningcss, `sharp`, embedded
-`sass`, React Refresh. Most of that follows from the premise: a library that
-executed code would need isolation, and isolation is the cost this one exists to remove. Full
-reasoning in [`docs/design/06-scope-and-limits.md`](docs/design/06-scope-and-limits.md).
+**Native binaries**: `lightningcss`, `@swc/core`, `sharp`, embedded `sass`. A package with a
+WASM build can be mapped to it; one without cannot run here at all.
+
+**Output hooks**: `generateBundle` and `renderChunk` have nowhere to live, because esbuild's
+plugin API has no output phase. A manifest, compression or legacy plugin will not work.
+
+**Sourcemaps through a transform**: a plugin may return `map` and it is dropped — esbuild's
+`onLoad` takes no input sourcemap.
+
+**Running real `vite build`**: it wants `worker_threads`, an HTTP server and native rollup.
+Being compatible with Vite _plugins_ is what buys the coverage.
+
+Also: `postinstall` and `package.json` scripts, and React Refresh. Full reasoning in
+[`docs/design/06-scope-and-limits.md`](docs/design/06-scope-and-limits.md).
 
 ## Docs, contributing, license
 
