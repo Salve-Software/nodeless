@@ -1,65 +1,117 @@
-# Installer — phase 2
+# Installer
 
-It does not exist yet. The contract is already in `src/types/`, `install()` throws
-`InstallerNotConfiguredError` with a message saying what to do, and the injection point is
-`createProject({ installer })`. Today `node_modules` arrives ready-made in `files` — that is
-what `example/read-project-files.ts` does.
-
-This document is the plan, not a description of something that runs.
-
-## The contract
+`npm install` without npm, and without executing anything. Reads `/package.json` from the VFS,
+talks to the registry over `fetch`, and fills `/node_modules` — the same code in Node and in the
+browser.
 
 ```ts
-interface Installer {
-  install(): Promise<InstallResult>;
-}
+const project = new NodelessProject({ files });
+const { installed, warnings, lockfile } = await project.install();
+```
 
-interface InstallResult {
-  installed: Record<string, string>; // name → the version that landed in the VFS
-  warnings: string[]; // unsatisfied peerDependencies
-  lockfile: Lockfile;
+## The walk
+
+Breadth first, one round trip per level:
+
+```
+read /package.json → dependencies
+│
+└─ for each level, in parallel:
+   ├─ fetchPackument   GET <registry>/<name>, abbreviated document
+   ├─ pickVersion      semver.maxSatisfying, or a dist-tag
+   ├─ downloadPackage  cache → tarball → integrity → gunzip → untar
+   │
+   └─ then, synchronously:
+      ├─ planInstallDir  root, or nested under the dependent
+      ├─ writePackage    into the VFS
+      └─ queue the transitive dependencies
+```
+
+**Placement is synchronous on purpose.** Fetching runs in parallel, but deciding where a package
+goes does not — otherwise two dependents could both claim the root `node_modules` for different
+versions of the same package, and whichever wrote last would win at random.
+
+## Hoisting
+
+Flat, like npm: everything lands in `/node_modules`. When a second dependent asks for a version
+the root copy does not satisfy, that copy nests under its own dependent:
+
+```
+/node_modules/dep                         2.0.0   ← claimed first
+/node_modules/legacy/node_modules/dep     1.5.0   ← nested, because ^1.0.0 conflicts
+```
+
+That is exactly the layout the resolver already walks, so nothing special is needed to read it
+back.
+
+A package whose root copy **does** satisfy the range is skipped entirely — not just re-used, but
+not walked again. That is also what breaks dependency cycles.
+
+## Nothing is executed
+
+No `postinstall`, no `prepare`, no binaries, no lifecycle script of any kind. Installing is
+downloading and unpacking. That restriction is what makes the whole sandbox unnecessary — see
+[06](06-scope-and-limits.md).
+
+## Tarballs
+
+An npm tarball is gzip over TAR. `fflate` does the gzip half; the TAR half is written here,
+because the format is small and pulling in a tar library would mean pulling in one that assumes
+Node streams.
+
+`untar` handles the ustar `prefix` field and the pax `path` record, which is what node-tar emits
+for any path over 100 bytes. Directory and link entries are dropped. `stripRootDir` removes the
+`package/` root that npm always adds.
+
+## Integrity
+
+`dist.integrity` from the packument is verified with `crypto.subtle` before the bytes are
+unpacked. **A missing integrity is tolerated; a wrong one is not** — old registry entries may
+carry none, but a mismatch means the bytes are not what the registry published.
+
+## Caching
+
+`PackageCache` is keyed by `name@version` and holds the extracted files, so a hit skips the
+network, the gunzip and the untar all at once. The default lives in memory for the process.
+
+The port is **async on purpose**: IndexedDB in the browser and disk in Node are both async, and
+the `Vfs` port is synchronous so it could never hold them.
+
+Within a single run, two more maps stop duplicate work: one packument fetch per package and one
+download per `name@version`, no matter how many dependents ask at the same time.
+
+## Peer dependencies
+
+Reported, never installed. A peer the package marks optional in `peerDependenciesMeta` is not
+even reported — every Radix package marks `@types/react` optional, and warning about it would
+bury the peers that actually matter.
+
+## The lockfile
+
+`/nodeless-lock.json`, keyed by **install directory** rather than by name, because a nested copy
+is a different entry:
+
+```json
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "node_modules/dep": { "version": "2.0.0", "resolved": "…", "integrity": "sha512-…" },
+    "node_modules/legacy/node_modules/dep": { "version": "1.5.0", "resolved": "…" }
+  }
 }
 ```
 
-## The algorithm
+Entries are sorted by directory, so the file is stable across runs.
 
-1. Read `dependencies` from the VFS's `/package.json`.
-2. For each package, `GET https://registry.npmjs.org/<name>` — the packument — and pick the
-   version with `semver.maxSatisfying`.
-3. Download `dist.tarball`, unpack it with `fflate` (gunzip + untar, pure JS) and write it to
-   `/node_modules/<name>/`, stripping the `package/` prefix every npm tarball carries.
-4. Recurse into each installed package's `dependencies`.
-5. **Flat/hoisted** layout, like npm: a single `/node_modules`; a version conflict nests under
-   `/node_modules/<a>/node_modules/<b>`. The resolver already understands that layout — there is
-   a test.
-6. `peerDependencies` only produce warnings. They are **never** installed.
-7. Cache by `name@version`, in memory. Persistence is an open decision (below).
-8. Emit `/nodeless-lock.json` holding `{ name: { version, resolved, integrity } }`.
+## What is not supported
 
-## What will not happen
+Only registry ranges. `npm:`, `file:`, `git+https:` and friends are refused with a clear error
+rather than guessed at — supporting them would mean supporting something other than the
+registry.
 
-**No script runs.** No `postinstall`, `prepare`, `install`, no binaries. Installing is
-downloading and unpacking, and that restriction is what makes the whole sandbox unnecessary. A
-package that needs a script to work is out of scope — see
-[06](06-scope-and-limits.md).
+Only `dependencies`. `devDependencies` never reach a browser bundle.
 
-## CORS
+## Open decision
 
-The npm registry and the CDNs (jsDelivr, unpkg) answer with CORS, so the installer works
-straight from the browser. The registry URL stays configurable, for anyone behind an internal
-proxy or Verdaccio.
-
-## An alternative, if tarballs get in the way
-
-Resolve bare imports through `https://esm.sh/<pkg>@<ver>` inside `onResolve` itself, with no
-tarball at all — esm.sh already serves the package with its transitive deps resolved. It trades
-disk and install time for a dependency on an external service at build time. An option, not the
-default.
-
-## Open decisions
-
-- **Persistent cache**: IndexedDB in the browser and disk in the API, or memory only. It
-  **cannot** sit behind the `Vfs` interface, which is synchronous — it belongs here, which is
-  already async.
-- **Freeze the scaffold's `node_modules`** (no `install()` at runtime) or let the user and the
-  AI add dependencies. If it is the latter, `install()` stops being optional.
+Persistent caching is a port with no implementation yet. IndexedDB in the browser and disk on
+the API are both a `PackageCache` away, and neither needs a change here.

@@ -41,10 +41,13 @@ conversation.
 | 6   | The scaffold builds in under 500 ms warm in Node                         | ✅ ~200 ms |
 | 7   | Zero dependency on `child_process`, a real `fs`, or an external binary   | ✅         |
 
-\* The `dist/` is verifiably Node-free — only two bare imports, both resolvable through an
-import map — and `example/browser` runs that same file in the browser. Byte-for-byte
-equivalence between the two sides is not covered by an automated test yet; today it is checked
-by hand.
+\* The `dist/` is verifiably Node-free — four bare imports, all resolvable through an import
+map — and `example/browser` runs that same file in the browser. Byte-for-byte equivalence
+between the two sides is not covered by an automated test yet; today it is checked by hand.
+
+Criterion 3 is proved end to end by `npm run example:install`, which runs in CI: react,
+react-dom, @radix-ui/react-dialog, lucide-react, zustand, react-router, date-fns, zod and clsx
+come off registry.npmjs.org — 36 packages — and the result bundles.
 
 ## References
 

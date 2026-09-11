@@ -5,7 +5,7 @@ Four modules, each with a contract in `src/types/` and an implementation in `src
 ```
 types/  ← contracts: Vfs, Resolver, Bundler, Installer
    ↑
-classes/vfs/  ·  classes/resolver/  ·  classes/bundler/  ·  (classes/installer/, phase 2)
+classes/vfs/  ·  classes/resolver/  ·  classes/bundler/  ·  classes/installer/
    ↑
 nodeless-project.class.ts  ← the facade that stitches the four together
 ```
@@ -15,7 +15,7 @@ nodeless-project.class.ts  ← the facade that stitches the four together
 | `vfs`       | in-memory filesystem; sources and `node_modules` in the same place |
 | `resolver`  | Node's resolution algorithm, over the VFS                          |
 | `bundler`   | esbuild-wasm plus the plugin that binds esbuild to the VFS         |
-| `installer` | npm without npm: packument, semver, tarball — **phase 2**          |
+| `installer` | npm without npm: packument, semver, tarball, hoisting, lockfile    |
 
 ## The rule that holds everything up
 
@@ -96,6 +96,10 @@ themselves.
   erased at build time and cost nothing.
 - **`src/index.ts` never uses `export *`.** Every name is listed, so adding to the surface is a
   decision and not a side effect of dropping a file into a folder.
-- **Runtime dependencies are expensive.** There are two today: `esbuild-wasm` and
-  `resolve.exports`. Each one has to work in the browser with no shim. Before adding a third,
-  ask whether you could just write it.
+- **A package installs, it never runs.** No `postinstall`, no `prepare`, no lifecycle script.
+  The day one has to run, the premise of the library has broken.
+- **Placement during install is synchronous.** Fetching is parallel; deciding where a package
+  lands is not, or two dependents race for the root `node_modules`.
+- **Runtime dependencies are expensive.** There are four today: `esbuild-wasm`,
+  `resolve.exports`, `semver` and `fflate`. Each one has to work in the browser with no shim.
+  Before adding a fifth, ask whether you could just write it.

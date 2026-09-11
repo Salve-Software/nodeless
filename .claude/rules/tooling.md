@@ -11,6 +11,7 @@
 | `npm run format` / `format:check` | Prettier                                               |
 | `npm test` / `test:watch`         | Vitest                                                 |
 | `npm run example`                 | builds `example/app` in Node and writes the snapshot   |
+| `npm run example:install`         | installs from the real registry and builds the result  |
 | `npm run example:browser`         | serves the page running that same `dist/` in a browser |
 
 ## Two tsconfigs, and the second one is a guard
@@ -62,15 +63,15 @@ directly by the browser in `example/browser`, with no bundler to patch it up.
 
 ## The dist has to stay clean
 
-After `npm run build`, `dist/` may hold exactly two bare imports: `esbuild-wasm` and
-`resolve.exports`. That is what lets the browser page resolve everything through an import map
-with no bundling step.
+After `npm run build`, `dist/` may hold exactly four bare imports: `esbuild-wasm`,
+`resolve.exports`, `semver` and `fflate`. That is what lets the browser page resolve everything
+through an import map with no bundling step.
 
 ```bash
 grep -rhoE "from '[^.'][^']*'" dist | sort -u
 ```
 
-Adding a third runtime dependency means adding an entry to the import map in
+Adding a fifth runtime dependency means adding an entry to the import map in
 `example/browser/index.html` and a line in the README. Think twice.
 
 ## Prettier and ESLint
@@ -91,9 +92,13 @@ and `no-restricted-imports` over Node builtins.
 
 `.github/workflows/ci.yml`, two jobs.
 
-**`verify`** runs on every PR and every push: lint, typecheck, format, test, build and
-`npm run example`. The example is the end-to-end smoke test — it builds the real React scaffold
-and fails if the warm build goes over 500 ms.
+**`verify`** runs on every PR and every push: lint, typecheck, format, test, build,
+`npm run example` and `npm run example:install`.
+
+The first example is the offline smoke test — it builds the real React scaffold and fails if the
+warm build goes over 500 ms. The second is the only end-to-end proof of the installer: it really
+talks to registry.npmjs.org and really bundles Radix, lucide, zustand and react-router. It is
+also the only step in CI that needs the network.
 
 **`release`** runs **only on a push to `main`**, depends on `verify`, and fires semantic-release.
 
@@ -115,6 +120,6 @@ Versions the package from conventional commits and **publishes to npm**
 ## Dependabot
 
 Weekly, npm and github-actions. DevDependencies come grouped with the `chore` prefix and do not
-cut a release. **Runtime dependencies come on their own with the `fix` prefix** — `esbuild-wasm`
-and `resolve.exports` change the behaviour of the published package, and a major bump in either
-can break resolution for a real package without breaking a single test.
+cut a release. **Runtime dependencies come on their own with the `fix` prefix** — `esbuild-wasm`,
+`resolve.exports`, `semver` and `fflate` change the behaviour of the published package, and a
+major bump in any of them can break a real install or a real build without breaking one test.

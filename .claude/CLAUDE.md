@@ -6,7 +6,7 @@ Node API and in the browser.
 
 ```ts
 const project = new NodelessProject({ files }); // { 'src/main.tsx': '…', 'package.json': '…' }
-await project.install(); // registry → .tgz → VFS   (phase 2)
+await project.install(); // registry → .tgz → VFS, nothing executed
 const result = await project.build(); // { 'index.html', 'bundle.js', 'bundle.css' }
 project.watch(() => project.build().then(render)); // the "npm run dev"
 new NodelessProject({ snapshot: project.snapshot() }); // the same state, other side of the wire
@@ -42,14 +42,13 @@ Three jobs that looked like one:
 
 ## State
 
-Phases 0 and 1 are done and green: VFS, resolver (`exports`, `browser` field, subpaths,
-TS/ESM), esbuild-wasm bundler with its plugin, structured errors, snapshot, watch. `example/app`
-builds in ~200 ms warm, with real React 19 coming out of the `node_modules` inside the VFS.
+All four modules are implemented and green. `npm run example` builds the React scaffold offline
+in ~200 ms warm; `npm run example:install` pulls 36 packages off registry.npmjs.org — Radix,
+lucide, zustand, react-router, date-fns, zod — and bundles them, and both run in CI.
 
-**What does not exist yet:** the installer. `install()` throws `InstallerNotConfiguredError`
-until phase 2 — today `node_modules` arrives ready-made in `files`. The contract (`Installer`,
-`Lockfile`, `InstallResult`) is already in `src/types/`, and it only needs plugging into
-`new NodelessProject({ installer })`.
+**What is still missing:** CSS modules, Tailwind and React Refresh, all of which are phase 4.
+Persistent caching is a `PackageCache` away and has no implementation. The browser page exists
+and the `dist/` is verifiably Node-free, but nobody has run it in an actual browser yet.
 
 ## Mandatory rules
 
