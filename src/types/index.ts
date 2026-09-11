@@ -24,6 +24,8 @@ export type * from './package-cache.js';
 export type * from './resolve-request.js';
 export type * from './resolve-result.js';
 export type * from './resolver.js';
+export type * from './runtime-module.js';
+export type * from './runtime.js';
 export type * from './rm-options.js';
 export type * from './vfs-snapshot.js';
 export type * from './vfs-watch-event.js';
