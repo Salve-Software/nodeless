@@ -263,3 +263,52 @@ describe('EsbuildBundler, css transform', () => {
     expect(result.errors.map((error) => error.text).join()).toContain('postcss blew up');
   });
 });
+
+describe('EsbuildBundler, cdn mode', () => {
+  const cdn = { url: 'https://esm.sh' };
+  const project = {
+    '/package.json': '{"dependencies":{"zustand":"^5.0.0"}}',
+    '/src/main.ts': "export { create } from 'zustand';",
+  };
+
+  it('an uninstalled package becomes a url instead of a build error', async () => {
+    expect((await build(project)).ok).toBe(false);
+
+    const result = await build(project, { cdn });
+
+    expect(result.ok).toBe(true);
+    expect(text(result, 'bundle.js')).toContain('https://esm.sh/zustand@^5.0.0');
+  });
+
+  // Whatever is installed still wins, so cdn mode composes with a real install.
+  it('a package that is in the VFS is still bundled, not fetched', async () => {
+    const result = await build(
+      {
+        ...project,
+        '/node_modules/zustand/package.json': '{"name":"zustand","main":"index.js"}',
+        '/node_modules/zustand/index.js': 'export const create = () => "local";',
+      },
+      { cdn },
+    );
+
+    expect(text(result, 'bundle.js')).toContain('local');
+    expect(text(result, 'bundle.js')).not.toContain('esm.sh');
+  });
+
+  it('a relative import that does not exist is still an error', async () => {
+    const result = await build({ '/src/main.ts': "import './gone.js';" }, { cdn });
+
+    expect(result.ok).toBe(false);
+  });
+
+  // A builtin has no browser equivalent on a CDN either.
+  it('a node builtin still becomes an empty module, not a url', async () => {
+    const result = await build(
+      { '/src/main.ts': "import 'node:fs';\nexport const x = 1;" },
+      { cdn },
+    );
+
+    expect(result.ok).toBe(true);
+    expect(text(result, 'bundle.js')).not.toContain('esm.sh');
+  });
+});

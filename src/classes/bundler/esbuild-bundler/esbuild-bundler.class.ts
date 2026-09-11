@@ -22,6 +22,7 @@ import {
   createVfsPlugin,
   initializeEsbuild,
   loadEsbuild,
+  readDependencies,
   renderIndexHtml,
   resolveEntry,
   toBuildMessage,
@@ -87,6 +88,14 @@ export class EsbuildBundler implements Bundler {
             ...(this.cssTransform === undefined
               ? {}
               : { cssTransform: this.cssTransform }),
+            ...(options.cdn === undefined
+              ? {}
+              : {
+                  cdn: {
+                    ...options.cdn,
+                    dependencies: options.cdn.dependencies ?? readDependencies(this.vfs),
+                  },
+                }),
           }),
         ],
       });

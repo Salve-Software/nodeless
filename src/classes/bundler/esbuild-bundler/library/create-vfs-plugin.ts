@@ -4,6 +4,8 @@ import {
   EMPTY_NAMESPACE,
   VFS_NAMESPACE,
 } from '@/classes/bundler/esbuild-bundler/constants/index.js';
+import { cdnSpecifier } from './cdn-specifier.js';
+import { isBareSpecifier } from './is-bare-specifier.js';
 import { isExternalSpecifier } from './is-external-specifier.js';
 import { loadFromVfs } from './load-from-vfs.js';
 
@@ -14,6 +16,7 @@ export function createVfsPlugin({
   external,
   warnings,
   cssTransform,
+  cdn,
 }: VfsPluginOptions): Plugin {
   return {
     name: 'nodeless-vfs',
@@ -43,6 +46,12 @@ export function createVfsPlugin({
 
           return { path: args.path, namespace: EMPTY_NAMESPACE };
         } catch (error) {
+          // Nothing in the VFS matched. With a CDN configured that is not an error:
+          // the package is fetched by the browser at runtime instead of being bundled.
+          if (cdn && isBareSpecifier(args.path)) {
+            return { path: cdnSpecifier(args.path, cdn), external: true };
+          }
+
           return {
             errors: [{ text: error instanceof Error ? error.message : String(error) }],
           };

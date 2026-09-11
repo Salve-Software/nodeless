@@ -1,5 +1,5 @@
-import type { OnLoadResult } from 'esbuild-wasm';
 import type { VfsPluginOptions } from '@/classes/bundler/esbuild-bundler/types/index.js';
+import type { OnLoadResult } from 'esbuild-wasm';
 import { CSS_LOADERS } from '@/classes/bundler/esbuild-bundler/constants/index.js';
 import { dirname } from '@/library/index.js';
 import { loaderFor } from './loader-for.js';

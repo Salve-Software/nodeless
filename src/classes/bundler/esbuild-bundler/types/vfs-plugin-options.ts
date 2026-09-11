@@ -1,4 +1,10 @@
-import type { BuildMessage, CssTransform, Resolver, Vfs } from '@/types/index.js';
+import type {
+  BuildMessage,
+  CdnOptions,
+  CssTransform,
+  Resolver,
+  Vfs,
+} from '@/types/index.js';
 
 /** `warnings` is an out-parameter: the plugin appends to it while the build runs. */
 export interface VfsPluginOptions {
@@ -7,4 +13,5 @@ export interface VfsPluginOptions {
   external: string[];
   warnings: BuildMessage[];
   cssTransform?: CssTransform;
+  cdn?: CdnOptions;
 }

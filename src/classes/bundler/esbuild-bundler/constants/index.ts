@@ -10,4 +10,5 @@ export * from './empty-namespace.js';
 export * from './entry-candidates.js';
 export * from './html-template.js';
 export * from './loaders.js';
+export * from './project-manifest-path.js';
 export * from './vfs-namespace.js';
