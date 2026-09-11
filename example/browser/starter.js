@@ -11,6 +11,31 @@ export const STARTER = {
     2,
   ),
 
+  '/vite.config.ts': `import { readFileSync } from 'node:fs';
+
+// This runs in your browser. \`node:fs\` is the virtual filesystem — there is no disk
+// under this tab — and the plugin below invents a module that has no file at all.
+const manifest = JSON.parse(readFileSync('/package.json', 'utf8'));
+
+export default ({ mode }: { mode: string }) => ({
+  define: {
+    __PROJECT__: JSON.stringify(manifest.name),
+    __MODE__: JSON.stringify(mode),
+  },
+  plugins: [
+    {
+      name: 'built-by',
+      resolveId: (source: string) =>
+        source === 'virtual:built-by' ? '/virtual/built-by.js' : null,
+      load: (id: string) =>
+        id === '/virtual/built-by.js'
+          ? \`export const builtBy = 'a vite config, run in your browser';\`
+          : null,
+    },
+  ],
+});
+`,
+
   '/index.html': `<!doctype html>
 <html lang="en">
   <head>
@@ -37,6 +62,7 @@ createRoot(document.getElementById('root')!).render(
 `,
 
   '/src/App.tsx': `import { useState } from 'react';
+import { builtBy } from 'virtual:built-by';
 
 const STACK = ['no shell', 'no disk', 'no child process', 'no VM'];
 
@@ -60,6 +86,10 @@ export function App() {
       <button type="button" onClick={() => setCount((value) => value + 1)}>
         clicked {count} {count === 1 ? 'time' : 'times'}
       </button>
+
+      <p className="stamp">
+        {builtBy} — project {__PROJECT__}, mode {__MODE__}
+      </p>
 
       <small>Edit this file and hit Build.</small>
     </main>

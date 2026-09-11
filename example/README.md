@@ -90,6 +90,11 @@ npm run playground
 Compiles the library, serves the repository and opens the page. A CodeMirror editor with file
 tabs on the left, a live preview on the right, structured diagnostics underneath.
 
+The starter ships a `vite.config.ts`, and it is a tab you can edit. It reads `/package.json`
+through `node:fs` and stands up a virtual module — **in your browser**, where there is no disk
+for `node:fs` to have meant anything else. `npm run example:browser:test` drives all of it
+headless and asserts the result reached the iframe.
+
 ![the nodeless playground](../assets/playground.png)
 
 The page loads `dist/` directly, with no bundling step: the four runtime dependencies arrive

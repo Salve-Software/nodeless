@@ -8,6 +8,7 @@ const FILES = [
   '/src/App.tsx',
   '/src/main.tsx',
   '/src/app.css',
+  '/vite.config.ts',
   '/index.html',
   '/package.json',
 ];
