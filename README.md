@@ -88,15 +88,26 @@ what lets `watch()` run without a build triggering itself.
 
 `mode: 'development'` turns minification off and inline sourcemaps on.
 
+`publicDir` is copied to the output as is. Assets over `assetLimit` become their own file under
+`assets/` instead of a data URL, which is the threshold Vite uses. `import.meta.env` is defined
+with `MODE`, `DEV`, `PROD`, `BASE_URL` and `SSR`, plus whatever `env` adds.
+
+`compilerOptions.paths` from `/tsconfig.json` are honoured, so `@/components/button` resolves
+the way TypeScript would.
+
 ### Install
 
 ```ts
-const { installed, warnings, lockfile } = await project.install();
+const { installed, warnings, lockfile } = await project.install({ dev: true });
 ```
 
-Reads `dependencies` from `/package.json` and writes the packages into `/node_modules`. Peer
-dependencies show up in `warnings` and are never installed for you. Only registry ranges work:
-`npm:`, `file:` and `git+https:` are refused rather than guessed.
+Reads `dependencies` from `/package.json` and writes the packages into `/node_modules`. Pass
+`dev` to include `devDependencies`, which is where a Vite project keeps its CSS toolchain.
+
+A package listed under `workspaces` is taken from the VFS instead of the registry. A package
+that cannot be resolved at all becomes a `warnings` entry rather than failing the whole install,
+so one private dependency does not cost you the other twelve. Peers are reported the same way
+and never installed for you.
 
 ### In the browser
 

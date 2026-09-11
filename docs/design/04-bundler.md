@@ -31,6 +31,18 @@ Baking Tailwind in would make every consumer pay for `tailwindcss` and `postcss`
 the package at four runtime dependencies and leaves the choice to whoever is building — see
 `example/tailwind`, where Tailwind v3 runs entirely in memory through `content: [{ raw }]`.
 
+## Parity with what a Vite project expects
+
+Three things a scaffold assumes, which a bundler alone does not give you:
+
+- **`import.meta.env`** is defined rather than left alone. Untouched it is `undefined` in a plain
+  module, so the first line reading an env throws at runtime after a build that passed.
+- **`public/`** is copied to the output. The scaffold HTML links straight into it, and without
+  the copy the preview serves 404. A real build output wins a name collision.
+- **Assets over `assetLimit`** become their own file under `assets/` instead of a data URL. At
+  4 kB, the same threshold Vite uses. Everything inlined means a 2 MB image costs a third more
+  in the bundle and cannot be cached apart from the code.
+
 ## Building without installing
 
 `build({ cdn: { url: 'https://esm.sh' } })` turns a bare import that nothing in the VFS resolves
