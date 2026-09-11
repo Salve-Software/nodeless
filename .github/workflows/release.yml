@@ -1,0 +1,61 @@
+name: Release
+
+# Manual only. Publishing is a decision, not a side effect of merging.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Work out the next version and stop, without tagging or publishing
+        type: boolean
+        default: false
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      # Trusted publishing: npm exchanges this OIDC token for a short-lived
+      # credential. There is no NPM_TOKEN anywhere in this repository.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # semantic-release needs the full history to find the last tag.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      # Node 22 ships npm 10, and trusted publishing landed in npm 11.5.1.
+      - name: Upgrade npm
+        run: |
+          npm install -g npm@latest
+          npm --version
+
+      - run: npm ci
+
+      # CI already ran on the commit, but a dispatch can target any ref, and shipping
+      # something unverified is the one mistake that reaches other people.
+      - name: Verify
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run format:check
+          npm test
+          npm run build
+
+      - name: Semantic release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release ${{ inputs.dry_run && '--dry-run' || '' }}
