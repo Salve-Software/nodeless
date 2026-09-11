@@ -12,18 +12,16 @@
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
 </p>
 
-You hand nodeless a map of files. It resolves the `dependencies` against the npm registry,
-unpacks the tarballs, and gives you back `index.html`, `bundle.js` and `bundle.css` — in memory,
-in the same process. No shell, no filesystem, no child process, no VM.
+Give it a map of files. It installs the dependencies from npm and hands back `index.html`,
+`bundle.js` and `bundle.css`, all in memory and in the same process. No shell, no filesystem, no
+child process, no VM.
 
-The usual way to build on demand is to hand the sources to a container. That is cold start and
-cost for something that is, at bottom, a text transformation: a bundler reads files, resolves
-imports, transpiles and concatenates — it never runs the code it is bundling, and unpacking a
-tarball does not either. nodeless drops the machine and keeps the build. Because it does, the
-same code runs on your server and in your user's browser.
+This works because a bundler never runs the code it bundles, and unpacking a tarball doesn't
+either. The container people spin up to build on demand is guarding a step that was already
+inert. Drop it and the same code runs on your server and in your user's browser.
 
 <p align="center">
-  <img src="./assets/playground.png" alt="The playground: an editor on the left, the built app running on the right" width="900">
+  <img src="./assets/playground.png" alt="An editor on the left, the built app running on the right" width="900">
 </p>
 
 ```ts
@@ -32,11 +30,11 @@ import { NodelessProject } from '@salve-software/nodeless';
 const project = new NodelessProject({
   files: {
     '/package.json': '{ "dependencies": { "react": "^19.0.0", "react-dom": "^19.0.0" } }',
-    '/src/main.tsx': "import { createRoot } from 'react-dom/client'; /* … */",
+    '/src/main.tsx': "import { createRoot } from 'react-dom/client'; /* ... */",
   },
 });
 
-await project.install(); // registry → .tgz → /node_modules, in memory
+await project.install();
 
 const result = await project.build();
 
@@ -49,49 +47,33 @@ if (result.ok) {
 
 ## Features
 
-- **No VM, no filesystem.** Nothing from the project you are building is ever executed — not
-  during `install()`, not during `build()`. No `postinstall`, no `package.json` scripts, no
-  `eval`. The isolation does not come from a sandbox; it comes from there being no execution.
-- **A real npm install.** Packument, `semver` ranges, tarballs verified against the integrity the
-  registry published, npm's flat layout with nesting on conflict, and a lockfile.
-- **The same code on both sides.** One build output, four bare imports, all resolvable through an
-  import map. A headless Chromium job in CI opens the playground, installs from
-  registry.npmjs.org and checks the iframe really executes the result.
-- **Errors are data.** A failing build returns `{ ok: false, errors }` with file, line and column
-  instead of throwing, so whatever called it can act on the position.
-- **Fast enough to skip the dev server.** A React scaffold builds in ~200 ms warm, so preview is
-  build plus iframe. `watch()` debounces the VFS and rebuilds.
-- **CSS modules, and Tailwind if you want it.** `*.module.css` is scoped automatically;
-  `cssTransform` hands every stylesheet to PostCSS — which is how Tailwind v3 runs here without
-  becoming a dependency of this package.
-- **Preview before installing.** `build({ cdn })` turns a bare import nothing resolved into a
-  pinned CDN URL, so a first render can happen while `install()` is still running.
+- **Nothing gets executed.** Not your files, not `postinstall`, not `package.json` scripts.
+- **A real npm install.** Semver ranges, integrity checks, npm's flat layout, a lockfile.
+- **Works in the browser.** A headless Chromium job in CI proves it, end to end.
+- **Errors are data.** Failed builds return `{ ok: false, errors }` with file, line and column.
+- **Fast enough to skip the dev server.** About 200 ms for a React scaffold.
+- **CSS modules built in, Tailwind if you want it.** `cssTransform` hands stylesheets to PostCSS.
+- **Preview before installing.** `build({ cdn })` points unresolved imports at a CDN.
 
-## Installation
-
-### Requirements
-
-| Component          | Requirement                                                         |
-| ------------------ | ------------------------------------------------------------------- |
-| Node               | 20 or higher, **or** any browser with `fetch` and WebAssembly       |
-| Packages you build | **pure JS** — no native bindings, no lifecycle scripts              |
-| In the browser     | a `wasmURL` for `esbuild.wasm`, and an import map for the four deps |
+## Install
 
 ```bash
 npm install @salve-software/nodeless
 ```
 
+Node 20 or higher, or any browser with `fetch` and WebAssembly. The packages you build have to be
+pure JS.
+
 ## Usage
 
-### Building
+### Build
 
 ```ts
 const result = await project.build({ mode: 'development' });
 ```
 
-`files` comes back as `Record<string, Uint8Array>` — `index.html` rewritten to point at the
-bundle, `bundle.js`, and `bundle.css` when there is any. **`build()` does not write to the VFS**,
-which is what lets `watch()` run without a build firing itself.
+`files` comes back as `Record<string, Uint8Array>`. `build()` never writes to the VFS, which is
+what lets `watch()` run without a build triggering itself.
 
 | Option       | Default                            |
 | ------------ | ---------------------------------- |
@@ -106,20 +88,20 @@ which is what lets `watch()` run without a build firing itself.
 
 `mode: 'development'` turns minification off and inline sourcemaps on.
 
-### Installing
+### Install
 
 ```ts
 const { installed, warnings, lockfile } = await project.install();
 ```
 
-Reads `dependencies` from `/package.json`, resolves every range, and writes the packages to
-`/node_modules` with npm's flat layout — nesting a copy under its dependent when versions clash.
-Peer dependencies are reported in `warnings`, never installed. Only registry ranges are
-supported: `npm:`, `file:` and `git+https:` are refused rather than guessed.
+Reads `dependencies` from `/package.json` and writes the packages into `/node_modules`. Peer
+dependencies show up in `warnings` and are never installed for you. Only registry ranges work:
+`npm:`, `file:` and `git+https:` are refused rather than guessed.
 
 ### In the browser
 
-The published `dist/` has four bare imports and no bundling step, so an import map is enough:
+The published `dist/` has four bare imports and needs no build step, so an import map covers it.
+Pass a `wasmURL` and the rest is identical.
 
 ```html
 <script type="importmap">
@@ -135,19 +117,13 @@ The published `dist/` has four bare imports and no bundling step, so an import m
 ```
 
 ```ts
-const project = new NodelessProject({
+new NodelessProject({
   files,
-  wasmURL: `https://unpkg.com/esbuild-wasm@${esbuild.version}/esbuild.wasm`,
+  wasmURL: 'https://unpkg.com/esbuild-wasm@0.25.12/esbuild.wasm',
 });
 ```
 
-esbuild-wasm already runs its own worker, so the build does not block the UI.
-
-### Public surface
-
-`NodelessProject` is the only runtime export — the class is how the library is used. The types
-come along because they are the contract: `Vfs`, `Bundler` and `Installer` are ports, so you can
-hand the constructor your own implementation without importing ours.
+esbuild-wasm runs its own worker, so the build doesn't block the UI.
 
 ## Playground
 
@@ -155,34 +131,21 @@ hand the constructor your own implementation without importing ours.
 npm run playground
 ```
 
-An editor with a live preview beside it. It installs from registry.npmjs.org **in your browser**,
-builds there, and renders the result — no `node_modules` anywhere. See
-[`example/`](example/README.md) for the other three examples.
+An editor with a live preview next to it. It installs from npmjs.org in your browser, builds
+there, and renders the result. The other examples live in [`example/`](example/README.md).
 
-## What it does not do
+## What it doesn't do
 
-Native bindings (`.node`), `package.json` scripts, `postinstall`, Rolldown, lightningcss,
-`sharp`, embedded `sass`, Tailwind v4, React Refresh.
+Native bindings, `package.json` scripts, `postinstall`, Rolldown, lightningcss, `sharp`, embedded
+`sass`, Tailwind v4, React Refresh. Most of that follows from the premise: a library that
+executed code would need isolation, and isolation is the cost this one exists to remove. Full
+reasoning in [`docs/design/06-scope-and-limits.md`](docs/design/06-scope-and-limits.md).
 
-**None of that is a backlog.** The first four follow from the premise: if the library executed
-code, it would need isolation, and isolation is the cost it exists to remove. The reasoning for
-each one is in
-[`docs/design/06-scope-and-limits.md`](docs/design/06-scope-and-limits.md).
+## Docs, contributing, license
 
-## Documentation
-
-[`docs/design/`](docs/design/README.md) holds the decisions rather than the description — why a
-build needs no VM, why the VFS is synchronous, how the resolver handles `exports` and the
-`browser` field, how the installer hoists.
-
-## Contributing
-
-Contributions are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, branch and commit
-conventions, and how PRs work here.
-
-## License
-
-This project is licensed under the MIT License, see [LICENSE](./LICENSE) for details.
+[`docs/design/`](docs/design/README.md) has the decisions behind the code.
+[CONTRIBUTING.md](./CONTRIBUTING.md) has setup and conventions. MIT, see
+[LICENSE](./LICENSE).
 
 <p align="center">
   Made by Salve Software
