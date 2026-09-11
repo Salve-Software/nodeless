@@ -7,9 +7,11 @@ the registry.
 example/
 ├── app/                    ← the offline project: react only, read from disk
 ├── install/                ← the networked project: radix, lucide, zustand, router, zod
+├── tailwind/               ← the same scaffold, styled with tailwind v3
 ├── read-project-files.ts   ← reads app/ + react/react-dom/scheduler into a FileInput
 ├── node/build.ts           ← npm run example
 ├── node/install.ts         ← npm run example:install
+├── node/tailwind.ts        ← npm run example:tailwind
 └── browser/index.html      ← npm run example:browser
 ```
 
@@ -41,6 +43,19 @@ bundle cannot pass.
 
 This is the only end-to-end proof of the installer, and the only step in CI that needs the
 network.
+
+## With Tailwind
+
+```bash
+npm run example:tailwind
+```
+
+Wires `postcss` and `tailwindcss` into `cssTransform` and builds. Tailwind v3 runs entirely in
+memory through `content: [{ raw }]`, reading the sources out of the VFS it is handed — 6.2 kB of
+utilities in ~450 ms, responsive variants included.
+
+**Both are devDependencies of the example, never of the library.** That is the whole point of the
+seam: Tailwind is the consumer's choice, not everyone's cost.
 
 ## In the browser
 

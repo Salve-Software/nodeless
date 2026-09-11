@@ -105,6 +105,46 @@ registry ranges are supported — `npm:`, `file:` and `git+https:` are refused r
 
 `mode: 'development'` turns minification off and inline sourcemaps on.
 
+### Stylesheets
+
+Plain `.css` is bundled and emitted as `bundle.css`. A file named `*.module.css` becomes a CSS
+module: the class names are scoped and the importer gets a map from the original name to the
+generated one.
+
+`cssTransform` runs over every stylesheet before esbuild parses it, and is handed the VFS so a
+scanner can read the sources:
+
+```ts
+import postcss from 'postcss';
+import tailwind from 'tailwindcss';
+
+new NodelessProject({
+  files,
+  cssTransform: async ({ css, vfs }) =>
+    (
+      await postcss([tailwind({ content: rawSources(vfs) })]).process(css, {
+        from: undefined,
+      })
+    ).css,
+});
+```
+
+That is how Tailwind v3 works here, and why `tailwindcss` and `postcss` are **not** dependencies
+of this package — see [`example/tailwind`](example/README.md).
+
+### Building without installing
+
+```ts
+await project.build({ cdn: { url: 'https://esm.sh' } });
+```
+
+A bare import nothing in the VFS resolves becomes a URL the browser fetches at runtime, pinned
+to the range in `package.json`: `zustand` becomes `https://esm.sh/zustand@^5.0.0`.
+
+It is a fallback, not a mode. Whatever is installed still gets bundled, a missing relative import
+is still an error, and a Node builtin is still an empty module — so it composes with a real
+install instead of replacing it. Useful for a first preview while `install()` is still running.
+
 ## In the browser
 
 The published `dist/` has exactly **four** bare imports, and all of them resolve through an
@@ -154,7 +194,7 @@ internal and free to change.
 ## Scope
 
 Works with **pure-JS dependencies**: React, ReactDOM, Radix, shadcn, lucide, zustand, utilities.
-TS, TSX, JS, JSX, plain CSS, JSON and assets as data URLs.
+TS, TSX, JS, JSX, plain CSS, CSS modules, JSON and assets as data URLs.
 
 Does not work — and will not — with native bindings, `package.json` scripts, `postinstall`, or
 anything that needs to execute during the build. That is not a matter of time: it is the
@@ -166,8 +206,10 @@ VFS, resolver, bundler and installer are all implemented. Two examples run in CI
 React scaffold offline in ~200 ms warm, the other installs 36 packages off registry.npmjs.org —
 Radix, lucide, zustand, react-router, date-fns, zod — and bundles them in ~1.4 s.
 
-**Not done yet:** CSS modules, Tailwind and React Refresh. Persistent caching is a `PackageCache`
-away but has no implementation. The browser page has not been run in an actual browser.
+**Not done yet:** React Refresh — with ~200 ms rebuilds a full iframe reload costs less than the
+machinery, and the transform it needs is Babel-grade work esbuild does not do. Persistent
+caching is a `PackageCache` away but has no implementation. The browser page has not been run in
+an actual browser.
 
 ## Development
 
@@ -176,6 +218,7 @@ npm install
 npm test
 npm run example         # builds example/app in Node, offline
 npm run example:install # installs from the real registry and builds the result
+npm run example:tailwind # builds a tailwind v3 project through the css transform
 npm run example:browser # serves the page running that same dist/ in a browser
 ```
 
