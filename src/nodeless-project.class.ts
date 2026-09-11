@@ -143,11 +143,14 @@ export class NodelessProject {
         vfs: this.vfs,
         resolve: (source, importer) =>
           tryResolve(resolver, { specifier: source, importer }),
+        // Sass before Tailwind: a `.scss` file has to become CSS before anything reads
+        // it as CSS. Tailwind claims a stylesheet on `@apply`, and would otherwise eat
+        // the `@use` that Sass still needs.
         plugins: [
           ...(this.options.plugins ?? []),
           ...plugins,
-          tailwindPlugin(),
           sassPlugin(),
+          tailwindPlugin(),
         ],
       }),
     });
