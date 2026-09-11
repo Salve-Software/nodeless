@@ -82,4 +82,8 @@ npm run example:browser:test
 Drives that same page in a headless Chromium and asserts six things: install runs against the
 registry over CORS, build runs, the iframe **executes** the bundle, React state updates on a
 click, an edit rebuilds and re-renders, and a syntax error comes back as a diagnostic carrying
-`file:line:column`. It runs as its own CI job, and it regenerates the screenshot above.
+`file:line:column`. It runs as its own CI job.
+
+It does not touch the screenshot above unless you ask: `SCREENSHOT=1 npm run example:browser:test`.
+Rewriting it on every run only changes the build time printed on screen, and left the tree dirty
+for nothing.

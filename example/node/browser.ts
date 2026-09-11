@@ -42,7 +42,12 @@ const label = (await button.innerText()).trim();
 if (label !== 'clicked 1 time') failures.push(`counter did not advance: "${label}"`);
 else console.log('  react state updated on click');
 
-await page.screenshot({ path: 'example/browser/playground.png' });
+// Off by default: rewriting it on every run leaves a dirty tree for a few bytes of
+// difference in the build time printed on screen. `SCREENSHOT=1` refreshes it.
+if (process.env['SCREENSHOT'] === '1') {
+  await page.screenshot({ path: 'example/browser/playground.png' });
+  console.log('  screenshot refreshed');
+}
 
 // 5. Editing a source rebuilds in the browser and the iframe picks it up.
 await page.locator('.cm-content').click();
