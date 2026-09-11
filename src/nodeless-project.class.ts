@@ -36,6 +36,7 @@ export class NodelessProject {
   private readonly runtime: Runtime;
   private readonly config: ConfigLoader;
   private bundler: Bundler | undefined;
+  private readonly unwatchConfig: Disposer;
 
   constructor(options: NodelessProjectOptions = {}) {
     const { files, snapshot, vfs, installer, runtime, registryUrl, packageCache } =
@@ -58,7 +59,7 @@ export class NodelessProject {
       });
 
     // Vite restarts on a config edit for the same reason: the plugins are already built.
-    this.vfs.watch((event) => {
+    this.unwatchConfig = this.vfs.watch((event) => {
       if (CONFIG_CANDIDATES.includes(event.path)) this.reset();
     });
   }
@@ -108,6 +109,7 @@ export class NodelessProject {
   }
 
   async dispose(): Promise<void> {
+    this.unwatchConfig();
     await this.runtime.dispose();
     await this.bundler?.dispose();
   }
