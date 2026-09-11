@@ -44,6 +44,11 @@ jobs:
       - name: Example — build example/app and check the dist
         run: npm run example
 
+      # The only end-to-end proof of the installer: it really talks to registry.npmjs.org
+      # and really bundles Radix, lucide, zustand, react-router, date-fns and zod.
+      - name: Example — install from the registry and build
+        run: npm run example:install
+
   release:
     name: Release
     needs: verify
