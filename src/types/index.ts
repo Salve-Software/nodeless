@@ -13,6 +13,7 @@ export type * from './esbuild-api.js';
 export type * from './file-input.js';
 export type * from './file-map.js';
 export type * from './file-stat.js';
+export type * from './install-options.js';
 export type * from './install-result.js';
 export type * from './installer.js';
 export type * from './lockfile-entry.js';

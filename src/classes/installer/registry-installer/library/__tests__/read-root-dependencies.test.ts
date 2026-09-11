@@ -35,3 +35,29 @@ describe('readRootDependencies', () => {
     expect(() => readRootDependencies(vfs)).toThrow(InstallError);
   });
 });
+
+describe('readRootDependencies, devDependencies', () => {
+  const manifest = {
+    dependencies: { react: '^19.0.0' },
+    devDependencies: { tailwindcss: '^4.0.0' },
+  };
+
+  it('are left out by default', () => {
+    expect(readRootDependencies(vfsWith(manifest)).map((r) => r.name)).toEqual(['react']);
+  });
+
+  // A Vite project keeps its CSS toolchain there, and the CSS cannot resolve without it.
+  it('come in when dev is set', () => {
+    expect(
+      readRootDependencies(vfsWith(manifest), { dev: true })
+        .map((r) => r.name)
+        .sort(),
+    ).toEqual(['react', 'tailwindcss']);
+  });
+
+  it('a dependency wins over a devDependency of the same name', () => {
+    const both = { dependencies: { p: '^2.0.0' }, devDependencies: { p: '^1.0.0' } };
+
+    expect(readRootDependencies(vfsWith(both), { dev: true })[0]?.range).toBe('^2.0.0');
+  });
+});

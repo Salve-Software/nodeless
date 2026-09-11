@@ -1,11 +1,14 @@
 import type { InstallRequest } from '@/classes/installer/registry-installer/types/index.js';
-import type { Vfs } from '@/types/index.js';
+import type { InstallOptions, Vfs } from '@/types/index.js';
 import { PACKAGE_JSON_PATH } from '@/classes/installer/registry-installer/constants/index.js';
 import { ROOT_PATH } from '@/constants/index.js';
 import { InstallError } from '@/errors/index.js';
 
-/** Only `dependencies`. devDependencies never reach a browser bundle. */
-export function readRootDependencies(vfs: Vfs): InstallRequest[] {
+/** `dev` matters because a Vite project keeps tailwindcss and friends in devDependencies. */
+export function readRootDependencies(
+  vfs: Vfs,
+  { dev = false }: InstallOptions = {},
+): InstallRequest[] {
   const bytes = vfs.tryReadFile(PACKAGE_JSON_PATH);
 
   if (!bytes) {
@@ -15,15 +18,22 @@ export function readRootDependencies(vfs: Vfs): InstallRequest[] {
   }
 
   const manifest = parse(vfs.readText(PACKAGE_JSON_PATH));
+  const declared = {
+    ...(dev ? manifest.devDependencies : {}),
+    ...manifest.dependencies,
+  };
 
-  return Object.entries(manifest.dependencies ?? {}).map(([name, range]) => ({
+  return Object.entries(declared).map(([name, range]) => ({
     name,
     range,
     parentDir: ROOT_PATH,
   }));
 }
 
-function parse(text: string): { dependencies?: Record<string, string> } {
+function parse(text: string): {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+} {
   try {
     return JSON.parse(text) as { dependencies?: Record<string, string> };
   } catch {

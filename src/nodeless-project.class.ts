@@ -3,6 +3,7 @@ import type {
   BuildResult,
   Bundler,
   Disposer,
+  InstallOptions,
   InstallResult,
   Installer,
   NodelessProjectOptions,
@@ -61,8 +62,8 @@ export class NodelessProject {
   }
 
   /** Reads `/package.json` and fills `/node_modules`. Never runs a lifecycle script. */
-  async install(): Promise<InstallResult> {
-    return this.installer.install();
+  async install(options?: InstallOptions): Promise<InstallResult> {
+    return this.installer.install(options);
   }
 
   /** Does not write to the VFS. That is what lets `watch` run without a build firing itself. */

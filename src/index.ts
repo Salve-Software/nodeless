@@ -15,6 +15,7 @@ export type {
   FileInput,
   FileMap,
   FileStat,
+  InstallOptions,
   InstallResult,
   Installer,
   Lockfile,
