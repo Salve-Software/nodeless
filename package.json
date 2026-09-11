@@ -44,7 +44,7 @@
     "test:watch": "vitest",
     "example": "tsx example/node/build.ts",
     "example:install": "tsx example/node/install.ts",
-    "example:browser": "npm run build && npm run example && npx --yes serve@14 . -l 5173",
+    "example:browser": "npm run build && npx --yes serve@14 . -l 5173",
     "prepare": "husky || true"
   },
   "dependencies": {

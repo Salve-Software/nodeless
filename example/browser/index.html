@@ -20,8 +20,8 @@
         padding: 1rem;
       }
       header {
-        display: flex;
         align-items: baseline;
+        display: flex;
         gap: 1rem;
       }
       h1 {
@@ -31,10 +31,10 @@
       #status {
         color: #8b93a1;
         font-size: 0.85rem;
+        white-space: pre-wrap;
       }
       #status[data-state='error'] {
         color: #ff6b6b;
-        white-space: pre-wrap;
       }
       main {
         display: grid;
@@ -61,14 +61,16 @@
       }
     </style>
     <!--
-      The nodeless dist imports `esbuild-wasm` and `resolve.exports` by name.
-      The import map resolves both with no bundling step on this page.
+      The nodeless dist imports esbuild-wasm, resolve.exports, semver and fflate by
+      name. The import map resolves all four with no bundling step on this page.
     -->
     <script type="importmap">
       {
         "imports": {
           "esbuild-wasm": "https://esm.sh/esbuild-wasm@^0.25.10",
-          "resolve.exports": "https://esm.sh/resolve.exports@^2.0.3"
+          "resolve.exports": "https://esm.sh/resolve.exports@^2.0.3",
+          "semver": "https://esm.sh/semver@^7.8.5",
+          "fflate": "https://esm.sh/fflate@^0.8.3"
         }
       }
     </script>
@@ -88,18 +90,40 @@
       // Exactly the same `dist/` the product API consumes in Node.
       import { NodelessProject } from '../../dist/index.js';
 
+      const SOURCES = [
+        '/package.json',
+        '/index.html',
+        '/src/main.tsx',
+        '/src/App.tsx',
+        '/src/app.css',
+      ];
       const EDITED_FILE = '/src/App.tsx';
+
       const status = document.getElementById('status');
       const editor = document.getElementById('editor');
       const preview = document.getElementById('preview');
 
-      // `npm run example` writes this file — the snapshot an API would ship to the front end.
-      const snapshot = await fetch('./snapshot.json').then((response) => response.json());
+      // The sources come from example/app, so this page and `npm run example` build
+      // the very same project. There is no node_modules here and no snapshot either.
+      const files = Object.fromEntries(
+        await Promise.all(
+          SOURCES.map(async (path) => [
+            path,
+            await fetch(`../app${path}`).then((r) => r.text()),
+          ]),
+        ),
+      );
 
       const project = new NodelessProject({
-        snapshot,
+        files,
         wasmURL: `https://unpkg.com/esbuild-wasm@${esbuild.version}/esbuild.wasm`,
       });
+
+      report('installing from registry.npmjs.org…');
+
+      const install = await project.install();
+
+      report(`installed ${Object.keys(install.installed).length} packages`);
 
       editor.value = project.vfs.readText(EDITED_FILE);
       editor.addEventListener('input', () => {
@@ -110,31 +134,36 @@
       await render();
 
       async function render() {
-        status.dataset.state = 'building';
-        status.textContent = 'building…';
+        report('building…');
 
         const result = await project.build({ mode: 'development' });
 
         if (!result.ok) {
-          status.dataset.state = 'error';
-          status.textContent = result.errors
-            .map((error) => `${error.file ?? ''}:${error.line ?? 0} ${error.text}`)
-            .join('\n');
+          report(
+            result.errors
+              .map((error) => `${error.file ?? ''}:${error.line ?? 0} ${error.text}`)
+              .join('\n'),
+            'error',
+          );
           return;
         }
 
-        status.dataset.state = 'ok';
-        status.textContent = `${result.durationMs} ms`;
+        report(`${result.durationMs} ms`);
         preview.srcdoc = inlineAssets(result.files);
       }
 
+      function report(text, state = 'ok') {
+        status.dataset.state = state;
+        status.textContent = text;
+      }
+
       /** The iframe cannot see the VFS: assets become Blob URLs inside the HTML. */
-      function inlineAssets(files) {
-        let html = new TextDecoder().decode(files['index.html']);
+      function inlineAssets(built) {
+        let html = new TextDecoder().decode(built['index.html']);
 
         for (const name of ['bundle.js', 'bundle.css']) {
-          if (!files[name]) continue;
-          html = html.replace(`./${name}`, URL.createObjectURL(new Blob([files[name]])));
+          if (!built[name]) continue;
+          html = html.replace(`./${name}`, URL.createObjectURL(new Blob([built[name]])));
         }
 
         return html;
