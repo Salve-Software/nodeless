@@ -1,0 +1,6 @@
+dist
+node_modules
+example/node/dist
+example/browser/snapshot.json
+package-lock.json
+CHANGELOG.md
