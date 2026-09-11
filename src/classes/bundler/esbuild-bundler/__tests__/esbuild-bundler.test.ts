@@ -312,3 +312,65 @@ describe('EsbuildBundler, cdn mode', () => {
     expect(text(result, 'bundle.js')).not.toContain('esm.sh');
   });
 });
+
+describe('EsbuildBundler, vite parity', () => {
+  it('import.meta.env is substituted instead of being undefined at runtime', async () => {
+    const result = await build(
+      { '/src/main.ts': 'export const m = import.meta.env.MODE;' },
+      { mode: 'development' as const },
+    );
+
+    expect(text(result, 'bundle.js')).toContain('development');
+    expect(text(result, 'bundle.js')).not.toContain('import.meta.env.MODE');
+  });
+
+  it('caller env variables reach the bundle', async () => {
+    const result = await build(
+      { '/src/main.ts': 'export const a = import.meta.env.VITE_API;' },
+      { env: { VITE_API: 'https://x.dev' } },
+    );
+
+    expect(text(result, 'bundle.js')).toContain('https://x.dev');
+  });
+
+  // Vite copies public/ to the dist, and the scaffold HTML links straight into it.
+  it('public/ is copied to the output', async () => {
+    const result = await build({
+      '/src/main.ts': 'export const x = 1;',
+      '/public/favicon.svg': '<svg/>',
+      '/public/img/logo.png': 'bits',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(Object.keys(result.ok ? result.files : {}).sort()).toContain('img/logo.png');
+    expect(text(result, 'favicon.svg')).toBe('<svg/>');
+  });
+
+  it('a build output wins a name collision with public/', async () => {
+    const result = await build({
+      '/src/main.ts': 'export const x = 1;',
+      '/public/index.html': 'FROM PUBLIC',
+    });
+
+    expect(text(result, 'index.html')).not.toBe('FROM PUBLIC');
+  });
+
+  it('a small asset inlines and a large one becomes its own file', async () => {
+    const small = new Uint8Array(100);
+    const large = new Uint8Array(9000).fill(65);
+    const files = {
+      '/src/main.ts':
+        "import a from './small.png';\nimport b from './large.png';\nexport const x = [a, b];",
+      '/src/small.png': small,
+      '/src/large.png': large,
+    };
+    const result = await build(files, { assetLimit: 4096 });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(text(result, 'bundle.js')).toContain('data:image/png;base64');
+    expect(
+      Object.keys(result.files).some((name) => name.startsWith('assets/large-')),
+    ).toBe(true);
+  });
+});

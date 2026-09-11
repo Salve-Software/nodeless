@@ -14,4 +14,5 @@ export interface VfsPluginOptions {
   warnings: BuildMessage[];
   cssTransform?: CssTransform;
   cdn?: CdnOptions;
+  assetLimit?: number;
 }

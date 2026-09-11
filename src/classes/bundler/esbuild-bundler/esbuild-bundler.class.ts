@@ -12,13 +12,18 @@ import type {
 import { ROOT_PATH } from '@/constants/index.js';
 import { bytesToText, normalizePath, textToBytes } from '@/library/index.js';
 import {
+  ASSET_NAMES,
   BUNDLE_NAME,
+  DEFAULT_ASSET_LIMIT,
   DEFAULT_HTML_PATH,
   DEFAULT_OUTDIR,
+  DEFAULT_PUBLIC_DIR,
   DEFAULT_TARGET,
 } from './constants/index.js';
 import {
+  buildImportMetaEnv,
   collectOutputs,
+  collectPublicFiles,
   createVfsPlugin,
   initializeEsbuild,
   loadEsbuild,
@@ -76,9 +81,14 @@ export class EsbuildBundler implements Bundler {
         target: options.target ?? DEFAULT_TARGET,
         jsx: 'automatic',
         logLevel: 'silent',
+        assetNames: ASSET_NAMES,
         minify: options.minify ?? mode === 'production',
         sourcemap: (options.sourcemap ?? mode === 'development') ? 'inline' : false,
-        define: { 'process.env.NODE_ENV': JSON.stringify(mode), ...options.define },
+        define: {
+          'process.env.NODE_ENV': JSON.stringify(mode),
+          'import.meta.env': JSON.stringify(buildImportMetaEnv(mode, options.env)),
+          ...options.define,
+        },
         plugins: [
           createVfsPlugin({
             vfs: this.vfs,
@@ -88,6 +98,7 @@ export class EsbuildBundler implements Bundler {
             ...(this.cssTransform === undefined
               ? {}
               : { cssTransform: this.cssTransform }),
+            assetLimit: options.assetLimit ?? DEFAULT_ASSET_LIMIT,
             ...(options.cdn === undefined
               ? {}
               : {
@@ -102,7 +113,11 @@ export class EsbuildBundler implements Bundler {
 
       warnings.push(...result.warnings.map(toBuildMessage));
 
-      const files = collectOutputs(result.outputFiles ?? [], outdir);
+      // public/ first, so a real build output always wins a name collision.
+      const files = {
+        ...collectPublicFiles(this.vfs, options.publicDir ?? DEFAULT_PUBLIC_DIR),
+        ...collectOutputs(result.outputFiles ?? [], outdir),
+      };
 
       files['index.html'] = textToBytes(
         renderIndexHtml(this.htmlTemplate(options.html), {

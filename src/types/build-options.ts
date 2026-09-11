@@ -15,4 +15,10 @@ export interface BuildOptions {
   conditions?: string[];
   /** Bare imports the VFS cannot resolve become URLs instead of build errors. */
   cdn?: CdnOptions;
+  /** Copied to the output untouched. Defaults to `/public`. */
+  publicDir?: string;
+  /** Bytes. An asset over this becomes its own file instead of a data URL. */
+  assetLimit?: number;
+  /** Merged into `import.meta.env`, which is otherwise undefined at runtime. */
+  env?: Record<string, string>;
 }

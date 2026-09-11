@@ -17,6 +17,7 @@ export function createVfsPlugin({
   warnings,
   cssTransform,
   cdn,
+  assetLimit,
 }: VfsPluginOptions): Plugin {
   return {
     name: 'nodeless-vfs',
@@ -59,7 +60,14 @@ export function createVfsPlugin({
       });
 
       build.onLoad({ filter: /.*/, namespace: VFS_NAMESPACE }, async (args) =>
-        loadFromVfs({ vfs, ...(cssTransform ? { cssTransform } : {}) }, args.path),
+        loadFromVfs(
+          {
+            vfs,
+            ...(cssTransform ? { cssTransform } : {}),
+            ...(assetLimit === undefined ? {} : { assetLimit }),
+          },
+          args.path,
+        ),
       );
 
       build.onLoad({ filter: /.*/, namespace: EMPTY_NAMESPACE }, () => ({
