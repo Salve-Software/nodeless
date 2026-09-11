@@ -66,7 +66,7 @@ npm run playground
 Compiles the library, serves the repository and opens the page. A CodeMirror editor with file
 tabs on the left, a live preview on the right, structured diagnostics underneath.
 
-![the nodeless playground](browser/playground.png)
+![the nodeless playground](../assets/playground.png)
 
 The page loads `dist/` directly, with no bundling step: the four runtime dependencies arrive
 from a CDN through an import map. It **installs from registry.npmjs.org in the browser**, builds

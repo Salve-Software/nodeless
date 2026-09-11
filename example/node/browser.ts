@@ -45,7 +45,7 @@ else console.log('  react state updated on click');
 // Off by default: rewriting it on every run leaves a dirty tree for a few bytes of
 // difference in the build time printed on screen. `SCREENSHOT=1` refreshes it.
 if (process.env['SCREENSHOT'] === '1') {
-  await page.screenshot({ path: 'example/browser/playground.png' });
+  await page.screenshot({ path: 'assets/playground.png' });
   console.log('  screenshot refreshed');
 }
 
