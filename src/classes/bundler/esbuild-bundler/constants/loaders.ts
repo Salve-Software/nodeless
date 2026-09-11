@@ -1,0 +1,25 @@
+import type { Loader } from 'esbuild-wasm';
+
+export const LOADERS: Record<string, Loader> = {
+  '.ts': 'ts',
+  '.tsx': 'tsx',
+  '.mts': 'ts',
+  '.cts': 'ts',
+  '.js': 'jsx',
+  '.jsx': 'jsx',
+  '.mjs': 'jsx',
+  '.cjs': 'jsx',
+  '.json': 'json',
+  '.css': 'css',
+  '.txt': 'text',
+  '.svg': 'dataurl',
+  '.png': 'dataurl',
+  '.jpg': 'dataurl',
+  '.jpeg': 'dataurl',
+  '.gif': 'dataurl',
+  '.webp': 'dataurl',
+  '.avif': 'dataurl',
+  '.ico': 'dataurl',
+  '.woff': 'dataurl',
+  '.woff2': 'dataurl',
+};
