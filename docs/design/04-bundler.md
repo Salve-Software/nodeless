@@ -37,10 +37,19 @@ is a table. A `SourceTransform` is three things:
 ```ts
 interface SourceTransform {
   name: string;
+  stage: 'language' | 'content';
   matches(file: { path: string; content: string }): boolean;
   apply(file: TransformInput): Promise<TransformResult>;
 }
 ```
+
+**It is a pipeline, not a switch**, and getting that wrong was a real bug. A `.scss` file that
+also uses `@apply` needs Sass and then Tailwind; picking one of them meant Tailwind claimed the
+file and choked on `$pad: 1rem;`.
+
+One `language` transform runs, because a file is written in one language. Then every `content`
+transform that claims the result runs in order, each seeing what the one before it produced.
+`transforms` from the options come first within their stage, so a caller can pre-empt.
 
 `apply` gets the file, the whole VFS and a `resolve` rooted at that file. The VFS is there
 because a scanner needs the sources; `resolve` is there because a transform also has to find its
@@ -53,7 +62,12 @@ Two ship today, and they are the same shape. **Tailwind is not a special case**,
 | `tailwind` | a stylesheet using Tailwind directives | `tailwindcss` |
 | `sass`     | `.scss` and `.sass`                    | `sass`        |
 
-`transforms` in the options is tried before them, so a caller can claim a file first.
+`transforms` in the options run before them within the same stage, so a caller can pre-empt.
+
+### When a transform is the wrong level
+
+esbuild's own plugins go through as `plugins`, ahead of the VFS one. That is the lower escape
+hatch: `onResolve` and `onLoad` instead of a whole-file rewrite, and an API people already know.
 
 ### What it costs to add one
 
