@@ -1,9 +1,9 @@
-import { join, resolve } from 'node:path';
 import type { Vfs } from '@/types/index.js';
+import { join, resolve } from 'node:path';
 import postcss from 'postcss';
 import tailwind from 'tailwindcss';
-import { readTree, VENDORED_PACKAGES } from '@example/read-project-files.js';
 import { NodelessProject } from '@/index.js';
+import { readTree, VENDORED_PACKAGES } from '@example/read-project-files.js';
 
 const REPO_ROOT = resolve(import.meta.dirname, '../..');
 const SCANNED = /\.(?:tsx?|jsx?|html)$/;
