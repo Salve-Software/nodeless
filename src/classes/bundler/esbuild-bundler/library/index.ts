@@ -3,6 +3,7 @@ export * from './create-vfs-plugin.js';
 export * from './initialize-esbuild.js';
 export * from './is-external-specifier.js';
 export * from './load-esbuild.js';
+export * from './load-from-vfs.js';
 export * from './loader-for.js';
 export * from './render-index-html.js';
 export * from './resolve-entry.js';

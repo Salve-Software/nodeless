@@ -9,6 +9,7 @@ export type {
   BuildResult,
   BuildSuccess,
   Bundler,
+  CssTransform,
   Disposer,
   EsbuildApi,
   FileInput,

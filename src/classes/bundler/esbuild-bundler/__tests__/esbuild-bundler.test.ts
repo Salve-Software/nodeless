@@ -207,3 +207,59 @@ describe('EsbuildBundler, css modules', () => {
     expect(result.ok && result.warnings).toEqual([]);
   });
 });
+
+describe('EsbuildBundler, css transform', () => {
+  function bundlerWith(
+    cssTransform: (input: { css: string }) => string | Promise<string>,
+  ) {
+    const vfs = new MemoryVfs({
+      files: {
+        '/src/main.ts': "import './app.css';\nexport const x = 1;",
+        '/src/app.css': '@custom { }',
+      },
+    });
+
+    return new EsbuildBundler({ vfs, resolver: new NodeResolver({ vfs }), cssTransform });
+  }
+
+  it('lets a transform rewrite the stylesheet before esbuild parses it', async () => {
+    const result = await bundlerWith(() => 'body { color: red; }').build();
+
+    expect(text(result, 'bundle.css')).toContain('red');
+  });
+
+  // Tailwind has to see every stylesheet, not just the entry one.
+  it('runs once per stylesheet in the graph', async () => {
+    const seen: string[] = [];
+    const vfs = new MemoryVfs({
+      files: {
+        '/src/main.ts': "import './a.css';\nimport './b.css';\nexport const x = 1;",
+        '/src/a.css': '.a { color: red; }',
+        '/src/b.css': '.b { color: blue; }',
+      },
+    });
+    const bundler = new EsbuildBundler({
+      vfs,
+      resolver: new NodeResolver({ vfs }),
+      cssTransform: ({ path, css }) => {
+        seen.push(path);
+
+        return css;
+      },
+    });
+
+    await bundler.build();
+
+    expect(seen.sort()).toEqual(['/src/a.css', '/src/b.css']);
+  });
+
+  it('a transform that throws comes back as a build error, not a crash', async () => {
+    const result = await bundlerWith(() => {
+      throw new Error('postcss blew up');
+    }).build();
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((error) => error.text).join()).toContain('postcss blew up');
+  });
+});

@@ -1,4 +1,5 @@
 import type { Bundler } from './bundler.js';
+import type { CssTransform } from './css-transform.js';
 import type { EsbuildApi } from './esbuild-api.js';
 import type { FileInput } from './file-input.js';
 import type { Installer } from './installer.js';
@@ -16,6 +17,7 @@ export interface NodelessProjectOptions {
   conditions?: string[];
   wasmURL?: string;
   esbuild?: EsbuildApi;
+  cssTransform?: CssTransform;
   registryUrl?: string;
   packageCache?: PackageCache;
   fetch?: typeof fetch;

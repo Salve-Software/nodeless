@@ -1,4 +1,5 @@
 export * from './bundle-name.js';
+export * from './css-loaders.js';
 export * from './css-module-loader.js';
 export * from './css-module-suffix.js';
 export * from './default-html-path.js';

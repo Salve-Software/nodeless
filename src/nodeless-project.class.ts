@@ -33,6 +33,7 @@ export class NodelessProject {
     conditions = DEFAULT_CONDITIONS,
     wasmURL,
     esbuild,
+    cssTransform,
     registryUrl,
     packageCache,
     fetch: fetchImpl,
@@ -47,6 +48,7 @@ export class NodelessProject {
         resolver: new NodeResolver({ vfs: this.vfs, conditions }),
         ...(wasmURL === undefined ? {} : { wasmURL }),
         ...(esbuild === undefined ? {} : { esbuild }),
+        ...(cssTransform === undefined ? {} : { cssTransform }),
       });
     this.installer =
       installer ??

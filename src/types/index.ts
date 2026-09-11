@@ -5,6 +5,7 @@ export type * from './build-options.js';
 export type * from './build-result.js';
 export type * from './build-success.js';
 export type * from './bundler.js';
+export type * from './css-transform.js';
 export type * from './disposer.js';
 export type * from './esbuild-api.js';
 export type * from './file-input.js';

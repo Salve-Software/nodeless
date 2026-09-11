@@ -4,6 +4,7 @@ import type {
   BuildOptions,
   BuildResult,
   Bundler,
+  CssTransform,
   EsbuildApi,
   Resolver,
   Vfs,
@@ -33,12 +34,14 @@ export class EsbuildBundler implements Bundler {
   private readonly resolver: Resolver;
   private readonly esbuild: EsbuildApi | undefined;
   private readonly wasmURL: string | undefined;
+  private readonly cssTransform: CssTransform | undefined;
 
-  constructor({ vfs, resolver, esbuild, wasmURL }: EsbuildBundlerOptions) {
+  constructor({ vfs, resolver, esbuild, wasmURL, cssTransform }: EsbuildBundlerOptions) {
     this.vfs = vfs;
     this.resolver = resolver;
     this.esbuild = esbuild;
     this.wasmURL = wasmURL;
+    this.cssTransform = cssTransform;
   }
 
   async build(options: BuildOptions = {}): Promise<BuildResult> {
@@ -81,6 +84,9 @@ export class EsbuildBundler implements Bundler {
             resolver: this.resolver,
             external: options.external ?? [],
             warnings,
+            ...(this.cssTransform === undefined
+              ? {}
+              : { cssTransform: this.cssTransform }),
           }),
         ],
       });

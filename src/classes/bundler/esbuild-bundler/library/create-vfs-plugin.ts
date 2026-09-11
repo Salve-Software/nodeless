@@ -4,9 +4,8 @@ import {
   EMPTY_NAMESPACE,
   VFS_NAMESPACE,
 } from '@/classes/bundler/esbuild-bundler/constants/index.js';
-import { dirname } from '@/library/index.js';
 import { isExternalSpecifier } from './is-external-specifier.js';
-import { loaderFor } from './loader-for.js';
+import { loadFromVfs } from './load-from-vfs.js';
 
 /** esbuild-wasm has no filesystem: every resolution and every read goes through here. */
 export function createVfsPlugin({
@@ -14,6 +13,7 @@ export function createVfsPlugin({
   resolver,
   external,
   warnings,
+  cssTransform,
 }: VfsPluginOptions): Plugin {
   return {
     name: 'nodeless-vfs',
@@ -49,11 +49,9 @@ export function createVfsPlugin({
         }
       });
 
-      build.onLoad({ filter: /.*/, namespace: VFS_NAMESPACE }, (args) => ({
-        contents: vfs.readFile(args.path),
-        loader: loaderFor(args.path),
-        resolveDir: dirname(args.path),
-      }));
+      build.onLoad({ filter: /.*/, namespace: VFS_NAMESPACE }, async (args) =>
+        loadFromVfs({ vfs, ...(cssTransform ? { cssTransform } : {}) }, args.path),
+      );
 
       build.onLoad({ filter: /.*/, namespace: EMPTY_NAMESPACE }, () => ({
         contents: 'export default {};',
