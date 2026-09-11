@@ -1,4 +1,6 @@
 export * from './bundle-name.js';
+export * from './css-module-loader.js';
+export * from './css-module-suffix.js';
 export * from './default-html-path.js';
 export * from './default-loader.js';
 export * from './default-outdir.js';

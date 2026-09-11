@@ -159,3 +159,51 @@ describe('EsbuildBundler', () => {
     expect(result.durationMs).toBeGreaterThanOrEqual(0);
   });
 });
+
+describe('EsbuildBundler, css modules', () => {
+  // Read in development mode, where esbuild keeps the generated names legible.
+  const development = { mode: 'development' as const };
+
+  it('scopes the class name and hands the mapping to the importer', async () => {
+    const result = await build(
+      {
+        '/src/main.ts':
+          "import styles from './card.module.css';\nexport const cls = styles.title;",
+        '/src/card.module.css': '.title { color: red; }',
+      },
+      development,
+    );
+
+    expect(text(result, 'bundle.css')).toContain('.card_title');
+    expect(text(result, 'bundle.css')).not.toContain('.title {');
+    expect(text(result, 'bundle.js')).toContain('card_title');
+  });
+
+  it('plain css next to a module keeps its global name', async () => {
+    const result = await build(
+      {
+        '/src/main.ts': "import './global.css';\nexport const x = 1;",
+        '/src/global.css': '.title { color: blue; }',
+      },
+      development,
+    );
+
+    expect(text(result, 'bundle.css')).toContain('.title {');
+  });
+
+  // esbuild says nothing about a class the stylesheet never defined: it reads as
+  // undefined at runtime. Worth pinning, because it is a trap and not a bug of ours.
+  it('a class the module does not define builds clean and reads as undefined', async () => {
+    const result = await build(
+      {
+        '/src/main.ts':
+          "import styles from './card.module.css';\nexport const cls = styles.missing;",
+        '/src/card.module.css': '.title { color: red; }',
+      },
+      development,
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.warnings).toEqual([]);
+  });
+});

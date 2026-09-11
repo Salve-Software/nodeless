@@ -19,6 +19,18 @@ describe('loaderFor', () => {
     expect(loaderFor('/src/photo.png')).toBe('dataurl');
   });
 
+  // `local-css` scopes the class names and hands back a map of original to hashed.
+  it('a .module.css file is a css module, not plain css', () => {
+    expect(loaderFor('/src/button.module.css')).toBe('local-css');
+    expect(loaderFor('/src/button.css')).toBe('css');
+  });
+
+  // `.module.css` has to be the end of the name, not just somewhere in it.
+  it('a file merely containing module is still plain css', () => {
+    expect(loaderFor('/src/module.css.backup.css')).toBe('css');
+    expect(loaderFor('/src/my.module.css.ts')).toBe('ts');
+  });
+
   // An unknown extension must never become executable code.
   it('an unknown extension falls back to text', () => {
     expect(loaderFor('/LICENSE')).toBe('text');
