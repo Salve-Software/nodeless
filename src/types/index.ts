@@ -15,6 +15,7 @@ export type * from './installer.js';
 export type * from './lockfile-entry.js';
 export type * from './lockfile.js';
 export type * from './nodeless-project-options.js';
+export type * from './package-cache.js';
 export type * from './resolve-request.js';
 export type * from './resolve-result.js';
 export type * from './resolver.js';
