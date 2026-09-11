@@ -54,9 +54,31 @@ jobs:
       - name: Example — build with tailwind through the css transform
         run: npm run example:tailwind
 
+  browser:
+    name: Browser
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      # The only proof the browser path works: it opens the playground in a real
+      # Chromium, installs from registry.npmjs.org over CORS, builds, and checks the
+      # iframe actually executes the bundle.
+      - name: Playground — install, build and run in a real browser
+        run: npm run example:browser:test
+
   release:
     name: Release
-    needs: verify
+    needs: [verify, browser]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
