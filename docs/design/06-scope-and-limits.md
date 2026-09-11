@@ -3,7 +3,8 @@
 ## What the library does
 
 **Pure-JS dependencies** — React, ReactDOM, UI libraries like Radix and shadcn, utilities — with
-TS, TSX, JS, JSX, plain CSS, JSON and assets as data URLs.
+TS, TSX, JS, JSX, plain CSS, CSS modules, JSON and assets as data URLs. PostCSS and Tailwind v3
+plug in through `cssTransform` without becoming dependencies of this package.
 
 ## What it does not do, and why
 
@@ -20,7 +21,15 @@ TS, TSX, JS, JSX, plain CSS, JSON and assets as data URLs.
 the library executed code, it would need isolation, and isolation is precisely the cost it
 exists to remove.
 
-Tailwind v3 through PostCSS in pure JS fits the scope and is queued for phase 4.
+Tailwind v3 through PostCSS in pure JS fits the scope and works today, through the
+`cssTransform` seam rather than as a dependency.
+
+**React Refresh is a decision, not a gap.** It needs a Babel-grade transform — `react-refresh`
+ships a Babel plugin, and esbuild does not do that kind of AST work. What it buys is preserved
+component state across an edit. A full rebuild plus an iframe reload costs ~200 ms, which is
+already below the threshold where anyone notices, so the machinery would be paying a large
+complexity bill for a small comfort. If state preservation ever becomes the point, this is where
+it would be revisited.
 
 ## The boundary
 

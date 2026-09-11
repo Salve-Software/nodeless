@@ -16,6 +16,31 @@ esbuild-wasm sees no disk at all. The `nodeless-vfs` plugin is what makes the bu
 An unknown extension falls to the `text` loader. **Never** to `js`: a file the library cannot
 interpret must not become code.
 
+## Stylesheets
+
+A file named `*.module.css` goes through esbuild's `local-css` loader instead of `css`, which
+scopes the class names and hands the importer a map from the original name to the generated one.
+esbuild says nothing when you read a class the stylesheet never defined — it is simply
+`undefined` at runtime. That is a trap worth knowing, and there is a test pinning it.
+
+`cssTransform` runs over every stylesheet, modules included, **before** esbuild parses it. It is
+handed the VFS, not just the file, because the interesting consumer is Tailwind and Tailwind has
+to scan the sources for class names.
+
+Baking Tailwind in would make every consumer pay for `tailwindcss` and `postcss`. The seam keeps
+the package at four runtime dependencies and leaves the choice to whoever is building — see
+`example/tailwind`, where Tailwind v3 runs entirely in memory through `content: [{ raw }]`.
+
+## Building without installing
+
+`build({ cdn: { url: 'https://esm.sh' } })` turns a bare import that nothing in the VFS resolves
+into a URL the browser fetches at runtime, pinned to the range in `package.json`.
+
+It is a **fallback, not a mode**: the resolver is still asked first, so anything installed is
+still bundled, a missing relative import is still an error, and a Node builtin is still an empty
+module. That is what lets it compose with a real install — a first preview can render off the
+CDN while `install()` is still running, and the next build uses what landed in the VFS.
+
 ## Configuration, and what each choice buys
 
 ```ts

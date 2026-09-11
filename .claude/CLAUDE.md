@@ -46,7 +46,11 @@ All four modules are implemented and green. `npm run example` builds the React s
 in ~200 ms warm; `npm run example:install` pulls 36 packages off registry.npmjs.org — Radix,
 lucide, zustand, react-router, date-fns, zod — and bundles them, and both run in CI.
 
-**What is still missing:** CSS modules, Tailwind and React Refresh, all of which are phase 4.
+CSS modules work, Tailwind v3 works through the `cssTransform` seam, and `build({ cdn })` can
+resolve uninstalled packages off a CDN. All four extra examples run in CI.
+
+**What is still missing:** React Refresh, which is a deliberate no — a rebuild plus an iframe
+reload costs ~200 ms and the transform it needs is Babel-grade work esbuild does not do.
 Persistent caching is a `PackageCache` away and has no implementation. The browser page exists
 and the `dist/` is verifiably Node-free, but nobody has run it in an actual browser yet.
 
