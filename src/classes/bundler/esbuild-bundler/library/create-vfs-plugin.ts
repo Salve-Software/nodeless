@@ -4,10 +4,8 @@ import {
   EMPTY_NAMESPACE,
   VFS_NAMESPACE,
 } from '@/classes/bundler/esbuild-bundler/constants/index.js';
-import { cdnSpecifier } from './cdn-specifier.js';
-import { isBareSpecifier } from './is-bare-specifier.js';
-import { isExternalSpecifier } from './is-external-specifier.js';
 import { loadFromVfs } from './load-from-vfs.js';
+import { resolveInVfs } from './resolve-in-vfs.js';
 
 /** esbuild-wasm has no filesystem: every resolution and every read goes through here. */
 export function createVfsPlugin({
@@ -19,54 +17,27 @@ export function createVfsPlugin({
   cdn,
   assetLimit,
 }: VfsPluginOptions): Plugin {
+  const scope = { resolver, external, warnings, ...(cdn === undefined ? {} : { cdn }) };
+
   return {
     name: 'nodeless-vfs',
     setup(build) {
-      build.onResolve({ filter: /.*/ }, async (args) => {
-        if (isExternalSpecifier(args.path, external)) {
-          return { path: args.path, external: true };
-        }
+      // Two registrations, and the difference is the point: resolution runs thousands of
+      // times per build, and an async handler costs a microtask on every one of them. Only
+      // a plugin that actually implements `resolveId` is worth paying that for.
+      if (container?.resolvesIds()) {
+        build.onResolve({ filter: /.*/ }, async (args) => {
+          const claimed = await container.resolveId(args.path, args.importer);
 
-        // A plugin gets first refusal, which is what makes a virtual module possible.
-        const claimed = await container?.resolveId(args.path, args.importer);
+          if (!claimed) return resolveInVfs(scope, args);
 
-        if (claimed) {
           return claimed.external
             ? { path: claimed.id, external: true }
             : { path: claimed.id, namespace: VFS_NAMESPACE };
-        }
-
-        try {
-          const result = resolver.resolve({
-            specifier: args.path,
-            importer: args.importer,
-          });
-
-          if (result.kind === 'file') {
-            return { path: result.path, namespace: VFS_NAMESPACE };
-          }
-          if (result.kind === 'external') {
-            return { path: result.specifier, external: true };
-          }
-
-          warnings.push({
-            text: result.reason,
-            ...(args.importer === '' ? {} : { file: args.importer }),
-          });
-
-          return { path: args.path, namespace: EMPTY_NAMESPACE };
-        } catch (error) {
-          // Nothing in the VFS matched. With a CDN configured that is not an error:
-          // the package is fetched by the browser at runtime instead of being bundled.
-          if (cdn && isBareSpecifier(args.path)) {
-            return { path: cdnSpecifier(args.path, cdn), external: true };
-          }
-
-          return {
-            errors: [{ text: error instanceof Error ? error.message : String(error) }],
-          };
-        }
-      });
+        });
+      } else {
+        build.onResolve({ filter: /.*/ }, (args) => resolveInVfs(scope, args));
+      }
 
       build.onLoad({ filter: /.*/, namespace: VFS_NAMESPACE }, async (args) =>
         loadFromVfs(

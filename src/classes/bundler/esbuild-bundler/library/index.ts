@@ -11,6 +11,7 @@ export * from './loader-for.js';
 export * from './read-dependencies.js';
 export * from './render-index-html.js';
 export * from './resolve-entry.js';
+export * from './resolve-in-vfs.js';
 export * from './to-build-message.js';
 export * from './to-failure-messages.js';
 export * from './transformable-text.js';

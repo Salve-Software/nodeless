@@ -29,6 +29,11 @@ export class PluginContainer {
     for (const plugin of this.plugins) await plugin.configResolved?.(config);
   }
 
+  /** Lets the bundler keep a synchronous `onResolve` when nothing would claim a specifier. */
+  resolvesIds(): boolean {
+    return this.plugins.some((plugin) => plugin.resolveId !== undefined);
+  }
+
   async resolveId(
     source: string,
     importer: string,
@@ -85,9 +90,5 @@ export class PluginContainer {
     if (!touched) return undefined;
 
     return { code: current, ...(loader === undefined ? {} : { loader }) };
-  }
-
-  hasHooks(): boolean {
-    return this.plugins.length > 0;
   }
 }
