@@ -12,6 +12,7 @@ export * from './create-querystring-shim.js';
 export * from './create-stats.js';
 export * from './create-string-decoder-shim.js';
 export * from './create-timers-shim.js';
+export * from './create-unsupported-shim.js';
 export * from './create-url-shim.js';
 export * from './create-util-shim.js';
 export * from './is-with-file-types.js';
