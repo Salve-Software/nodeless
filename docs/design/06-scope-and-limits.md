@@ -3,8 +3,8 @@
 ## What the library does
 
 **Pure-JS dependencies** — React, ReactDOM, UI libraries like Radix and shadcn, utilities — with
-TS, TSX, JS, JSX, plain CSS, CSS modules, JSON and assets as data URLs. PostCSS and Tailwind v3
-plug in through `cssTransform` without becoming dependencies of this package.
+TS, TSX, JS, JSX, plain CSS, CSS modules, JSON and assets. Tailwind and PostCSS plug in through
+`cssTransform` without becoming dependencies of this package.
 
 ## What it does not do, and why
 
@@ -14,15 +14,20 @@ plug in through `cssTransform` without becoming dependencies of this package.
 | run `package.json` scripts and `postinstall`     | executing is exactly what the library avoids              |
 | dependencies with native bindings (`.node`)      | they need a process with dlopen — there is none here      |
 | Rolldown, lightningcss, `sharp`, embedded `sass` | all of them depend on a native binary                     |
-| Tailwind v4                                      | depends on lightningcss                                   |
-| CSS modules and React Refresh                    | not implemented yet — phase 4                             |
+| React Refresh                                    | deliberate, see below                                     |
 
 **None of this is a matter of time.** The first three rows follow directly from the premise: if
 the library executed code, it would need isolation, and isolation is precisely the cost it
 exists to remove.
 
-Tailwind v3 through PostCSS in pure JS fits the scope and works today, through the
-`cssTransform` seam rather than as a dependency.
+**Tailwind v4 works, and this document used to say it did not.** The claim was that it needs
+lightningcss. That is true of `@tailwindcss/node`, `/postcss` and `/vite`, the integrations. The
+`tailwindcss` package itself has **zero dependencies**: `compile(css, { loadStylesheet })` is
+pure JavaScript and reads through a callback, which is exactly what a VFS can answer.
+
+What it does need is candidates, the list of class names in use. Tailwind's own scanner is the
+native Rust binary; feeding it tokens pulled out of the VFS avoids it entirely. `example/tailwind`
+does that in about forty lines and runs in CI.
 
 **React Refresh is a decision, not a gap.** It needs a Babel-grade transform — `react-refresh`
 ships a Babel plugin, and esbuild does not do that kind of AST work. What it buys is preserved

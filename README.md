@@ -52,7 +52,8 @@ if (result.ok) {
 - **Works in the browser.** A headless Chromium job in CI proves it, end to end.
 - **Errors are data.** Failed builds return `{ ok: false, errors }` with file, line and column.
 - **Fast enough to skip the dev server.** About 200 ms for a React scaffold.
-- **CSS modules built in, Tailwind if you want it.** `cssTransform` hands stylesheets to PostCSS.
+- **CSS modules built in, Tailwind if you want it.** `cssTransform` gets the stylesheet, the VFS
+  and a resolver, which is enough to run Tailwind v4 in memory.
 - **Preview before installing.** `build({ cdn })` points unresolved imports at a CDN.
 
 ## Install
@@ -148,7 +149,7 @@ there, and renders the result. The other examples live in [`example/`](example/R
 ## What it doesn't do
 
 Native bindings, `package.json` scripts, `postinstall`, Rolldown, lightningcss, `sharp`, embedded
-`sass`, Tailwind v4, React Refresh. Most of that follows from the premise: a library that
+`sass`, React Refresh. Most of that follows from the premise: a library that
 executed code would need isolation, and isolation is the cost this one exists to remove. Full
 reasoning in [`docs/design/06-scope-and-limits.md`](docs/design/06-scope-and-limits.md).
 

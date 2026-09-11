@@ -46,7 +46,7 @@ All four modules are implemented and green. `npm run example` builds the React s
 in ~200 ms warm; `npm run example:install` pulls 36 packages off registry.npmjs.org — Radix,
 lucide, zustand, react-router, date-fns, zod — and bundles them, and both run in CI.
 
-CSS modules work, Tailwind v3 works through the `cssTransform` seam, and `build({ cdn })` can
+CSS modules work, Tailwind v4 works through the `cssTransform` seam, and `build({ cdn })` can
 resolve uninstalled packages off a CDN. All four extra examples run in CI.
 
 `npm run playground` opens an editor-and-preview page that installs from the registry **in the

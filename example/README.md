@@ -50,11 +50,14 @@ network.
 npm run example:tailwind
 ```
 
-Wires `postcss` and `tailwindcss` into `cssTransform` and builds. Tailwind v3 runs entirely in
-memory through `content: [{ raw }]`, reading the sources out of the VFS it is handed — 6.2 kB of
-utilities in ~450 ms, responsive variants included.
+Wires `tailwindcss` v4 into `cssTransform` and builds. The `tailwindcss` package has zero
+dependencies and `compile()` reads through a callback, so it runs entirely in memory against the
+VFS: 6.4 kB of utilities in ~400 ms, with `@theme`, `@layer` and responsive variants.
 
-**Both are devDependencies of the example, never of the library.** That is the whole point of the
+Tailwind's own scanner is a native Rust binary. It is avoided by pulling candidate tokens out of
+the VFS and handing them over, which takes about ten lines.
+
+**It is a devDependency of the example, never of the library.** That is the whole point of the
 seam: Tailwind is the consumer's choice, not everyone's cost.
 
 ## In the browser

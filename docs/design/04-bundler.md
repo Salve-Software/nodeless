@@ -23,13 +23,16 @@ scopes the class names and hands the importer a map from the original name to th
 esbuild says nothing when you read a class the stylesheet never defined — it is simply
 `undefined` at runtime. That is a trap worth knowing, and there is a test pinning it.
 
-`cssTransform` runs over every stylesheet, modules included, **before** esbuild parses it. It is
-handed the VFS, not just the file, because the interesting consumer is Tailwind and Tailwind has
-to scan the sources for class names.
+`cssTransform` runs over every stylesheet, modules included, **before** esbuild parses it. It
+gets three things: the file, the whole VFS, and a `resolve` rooted at that file.
 
-Baking Tailwind in would make every consumer pay for `tailwindcss` and `postcss`. The seam keeps
-the package at four runtime dependencies and leaves the choice to whoever is building — see
-`example/tailwind`, where Tailwind v3 runs entirely in memory through `content: [{ raw }]`.
+The VFS is there because the interesting consumer is Tailwind, and Tailwind has to scan the
+sources for class names. `resolve` is there because it also has to find its own entry, and
+without it every transform would reimplement node resolution.
+
+Baking Tailwind in would make every consumer pay for it. The seam keeps the package at four
+runtime dependencies and leaves the choice to whoever is building — see `example/tailwind`,
+where Tailwind v4 runs entirely in memory.
 
 ## Parity with what a Vite project expects
 
