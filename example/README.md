@@ -50,15 +50,12 @@ network.
 npm run example:tailwind
 ```
 
-Wires `tailwindcss` v4 into `cssTransform` and builds. The `tailwindcss` package has zero
-dependencies and `compile()` reads through a callback, so it runs entirely in memory against the
-VFS: 6.4 kB of utilities in ~400 ms, with `@theme`, `@layer` and responsive variants.
+Builds a Tailwind v4 project. The script passes **no options at all**: a stylesheet using
+Tailwind directives is compiled because that is what the project asked for. 6.9 kB of utilities
+in ~390 ms, with `@theme`, `@layer` and responsive variants.
 
-Tailwind's own scanner is a native Rust binary. It is avoided by pulling candidate tokens out of
-the VFS and handing them over, which takes about ten lines.
-
-**It is a devDependency of the example, never of the library.** That is the whole point of the
-seam: Tailwind is the consumer's choice, not everyone's cost.
+The only requirement is that `tailwindcss` is in the VFS, like any other dependency. The engine
+comes from the optional peer next to nodeless; the stylesheets come from the project.
 
 ## In the browser
 

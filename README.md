@@ -52,8 +52,8 @@ if (result.ok) {
 - **Works in the browser.** A headless Chromium job in CI proves it, end to end.
 - **Errors are data.** Failed builds return `{ ok: false, errors }` with file, line and column.
 - **Fast enough to skip the dev server.** About 200 ms for a React scaffold.
-- **CSS modules built in, Tailwind if you want it.** `cssTransform` gets the stylesheet, the VFS
-  and a resolver, which is enough to run Tailwind v4 in memory.
+- **Tailwind just works.** A stylesheet with `@import 'tailwindcss'` is compiled, no
+  configuration. CSS modules are built in too.
 - **Preview before installing.** `build({ cdn })` points unresolved imports at a CDN.
 
 ## Install

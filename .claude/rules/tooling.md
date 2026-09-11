@@ -2,19 +2,19 @@
 
 ## Commands
 
-| Command                           | What it does                                           |
-| --------------------------------- | ------------------------------------------------------ |
-| `npm run build`                   | compiles through `tsconfig.build.json` (`src/` only)   |
-| `npm run typecheck`               | `tsc --noEmit`                                         |
-| `npm run typecheck:fast`          | `tsgo --noEmit`, a local accelerator                   |
-| `npm run lint` / `lint:fix`       | ESLint                                                 |
-| `npm run format` / `format:check` | Prettier                                               |
-| `npm test` / `test:watch`         | Vitest                                                 |
-| `npm run example`                 | builds `example/app` in Node, offline                  |
-| `npm run example:install`         | installs from the real registry and builds the result  |
-| `npm run example:tailwind`        | builds a Tailwind v4 project through the css transform |
-| `npm run playground`              | opens the editor-and-preview page in your browser      |
-| `npm run example:browser:test`    | drives that page headless and asserts it really works  |
+| Command                           | What it does                                          |
+| --------------------------------- | ----------------------------------------------------- |
+| `npm run build`                   | compiles through `tsconfig.build.json` (`src/` only)  |
+| `npm run typecheck`               | `tsc --noEmit`                                        |
+| `npm run typecheck:fast`          | `tsgo --noEmit`, a local accelerator                  |
+| `npm run lint` / `lint:fix`       | ESLint                                                |
+| `npm run format` / `format:check` | Prettier                                              |
+| `npm test` / `test:watch`         | Vitest                                                |
+| `npm run example`                 | builds `example/app` in Node, offline                 |
+| `npm run example:install`         | installs from the real registry and builds the result |
+| `npm run example:tailwind`        | builds a Tailwind v4 project with no configuration    |
+| `npm run playground`              | opens the editor-and-preview page in your browser     |
+| `npm run example:browser:test`    | drives that page headless and asserts it really works |
 
 ## Two tsconfigs, and the second one is a guard
 

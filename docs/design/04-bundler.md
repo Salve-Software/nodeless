@@ -30,9 +30,31 @@ The VFS is there because the interesting consumer is Tailwind, and Tailwind has 
 sources for class names. `resolve` is there because it also has to find its own entry, and
 without it every transform would reimplement node resolution.
 
-Baking Tailwind in would make every consumer pay for it. The seam keeps the package at four
-runtime dependencies and leaves the choice to whoever is building — see `example/tailwind`,
-where Tailwind v4 runs entirely in memory.
+## Tailwind is the default, not a dependency
+
+A stylesheet carrying `@import 'tailwindcss'` or any other Tailwind directive is compiled with
+no configuration, because the promise is "it builds your project", and half of the projects use
+Tailwind. Making that work only for callers willing to write forty lines of wiring is a kit, not
+a build.
+
+It does not cost the other half anything. `tailwindcss` is an **optional peer**, and the import
+only happens once a stylesheet is found to need it. A project with plain CSS never loads it.
+
+The split that makes this honest:
+
+- **the engine comes from the host**, the peer package, which is our dependency and our trust
+  level, the same as esbuild;
+- **the stylesheets come from the VFS**, so Tailwind has to be installed into the project like
+  any other dependency. `install({ dev: ['tailwindcss'] })`.
+
+Executing the project's own copy would be executing project code, which is the one line this
+library does not cross. The same reasoning refuses `@plugin` and `@config`: they point at
+JavaScript.
+
+Tailwind's own scanner is a native Rust binary. It is avoided by pulling candidate tokens out of
+the VFS and handing them over, which is a superset of what `@source` would have asked for.
+
+`cssTransform` still replaces the whole thing for anyone who wants PostCSS or something else.
 
 ## Parity with what a Vite project expects
 
