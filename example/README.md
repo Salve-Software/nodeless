@@ -1,12 +1,15 @@
 # example
 
-A real React project, built by nodeless on both sides.
+A real React project, built by nodeless on both sides — and a second one installed straight off
+the registry.
 
 ```
 example/
-├── app/                    ← the user's React project
+├── app/                    ← the offline project: react only, read from disk
+├── install/                ← the networked project: radix, lucide, zustand, router, zod
 ├── read-project-files.ts   ← reads app/ + react/react-dom/scheduler into a FileInput
 ├── node/build.ts           ← npm run example
+├── node/install.ts         ← npm run example:install
 └── browser/index.html      ← npm run example:browser
 ```
 
@@ -15,17 +18,29 @@ example/
 their value, because it is the actual React 19, with `exports`, `react-dom/client` and
 `react/jsx-runtime`.
 
-## In Node
+## Offline, in Node
 
 ```bash
 npm run example
 ```
 
-Builds the VFS, runs the build, writes `example/node/dist/` and prints the sizes. It fails if
-the warm build goes over 500 ms — that is acceptance criterion 6, and it runs in CI.
+Builds the VFS from disk, builds the project, writes `example/node/dist/` and prints the sizes.
+Then it recreates the project from a snapshot and checks the rebuild comes out byte for byte
+identical. Fails if the warm build goes over 500 ms — acceptance criterion 6, and it runs in CI.
 
-It also writes `example/browser/snapshot.json`: **the same snapshot an API would ship to the
-front end**. That file is what the browser example consumes.
+## From the real registry
+
+```bash
+npm run example:install
+```
+
+No `node_modules` anywhere. Reads `example/install/package.json`, installs 36 packages off
+registry.npmjs.org in ~1.8 s, and bundles them in ~1.4 s. It asserts that every declared
+dependency was installed and that each library really reached the output, so a silently empty
+bundle cannot pass.
+
+This is the only end-to-end proof of the installer, and the only step in CI that needs the
+network.
 
 ## In the browser
 
@@ -33,18 +48,9 @@ front end**. That file is what the browser example consumes.
 npm run example:browser   # http://localhost:5173/example/browser/
 ```
 
-Compiles the library, writes the snapshot and serves it statically. The page loads `dist/`
-directly, with no bundling step: the two runtime dependencies arrive from a CDN through an
-import map.
+Compiles the library and serves it statically. The page loads `dist/` directly, with no bundling
+step: the four runtime dependencies arrive from a CDN through an import map.
 
-Edit `App.tsx` in the textarea on the left and the iframe on the right rebuilds — this is
-`npm run dev`, except the "dev server" is `watch()` plus `build()` in your own browser.
-
-> `snapshot.json` comes out around 11 MB because it carries the whole `node_modules` as
-> installed. What trims that is the phase 2 installer, which downloads only what `package.json`
-> asks for.
-
-## What the example does not use
-
-`install()`. `node_modules` comes from this repository's own `node_modules`, read off disk by
-`read-project-files.ts`. It is the only part of the flow that is not yet the final one.
+It fetches its sources from `example/app`, **installs from registry.npmjs.org in the browser**,
+and builds. Edit `App.tsx` in the textarea on the left and the iframe on the right rebuilds —
+this is `npm run dev`, except the "dev server" is `watch()` plus `build()` in your own browser.

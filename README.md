@@ -41,14 +41,17 @@ const project = new NodelessProject({
   conditions, // exports conditions; defaults to browser, import, module, default
   wasmURL, // required in the browser: where to fetch esbuild.wasm from
   esbuild, // optional in Node: inject the native esbuild and go faster
-  installer, // phase 2
+  registryUrl, // defaults to https://registry.npmjs.org
+  packageCache, // back the name@version cache with IndexedDB or disk
+  fetch, // your own fetch, for an auth header or a proxy
+  installer, // your own Installer implementation
 });
 
 project.vfs; // readFile, writeFile, readdir, stat, rm, watch…
 await project.build(options?); // BuildResult — never throws
 project.watch(listener, { debounceMs });
 project.snapshot(); // plain JSON, to move between front end and API
-await project.install(); // phase 2
+await project.install(); // reads /package.json, fills /node_modules
 ```
 
 ### `BuildResult`
@@ -70,6 +73,24 @@ decode text with the standard `TextDecoder`.
 
 **`build()` does not write to the VFS.** If it did, `watch` would fire itself.
 
+### `install()`
+
+```ts
+const { installed, warnings, lockfile } = await project.install();
+```
+
+Reads `dependencies` from `/package.json` in the VFS, resolves every range against the registry,
+downloads and unpacks the tarballs, and writes them to `/node_modules` with npm's flat layout —
+nesting a copy under its dependent when versions conflict. It writes `/nodeless-lock.json` and
+returns the versions it picked.
+
+**No lifecycle script ever runs.** No `postinstall`, no `prepare`, no binaries. Installing is
+downloading and unpacking, which is why no sandbox is needed. Tarball integrity is verified
+against what the registry published before anything is unpacked.
+
+`warnings` carries unsatisfied peer dependencies; peers are never installed for you. Only
+registry ranges are supported — `npm:`, `file:` and `git+https:` are refused rather than guessed.
+
 ### `BuildOptions`
 
 | Option       | Default                            |
@@ -86,15 +107,17 @@ decode text with the standard `TextDecoder`.
 
 ## In the browser
 
-The published `dist/` has exactly **two** bare imports, and both resolve through an import map —
-no bundler is needed to use the library on a page:
+The published `dist/` has exactly **four** bare imports, and all of them resolve through an
+import map — no bundler is needed to use the library on a page:
 
 ```html
 <script type="importmap">
   {
     "imports": {
       "esbuild-wasm": "https://esm.sh/esbuild-wasm@^0.25.10",
-      "resolve.exports": "https://esm.sh/resolve.exports@^2.0.3"
+      "resolve.exports": "https://esm.sh/resolve.exports@^2.0.3",
+      "semver": "https://esm.sh/semver@^7.8.5",
+      "fflate": "https://esm.sh/fflate@^0.8.3"
     }
   }
 </script>
@@ -113,7 +136,8 @@ esbuild-wasm already spins up its own Web Worker to compile, so the build does n
 If you also want the resolver and the VFS off the main thread, put the whole `NodelessProject`
 in a worker.
 
-A running example: [`example/browser`](example/README.md).
+A running example: [`example/browser`](example/README.md) — it installs from the registry in the
+browser and rebuilds as you type, with no `node_modules` anywhere.
 
 ## Public surface
 
@@ -138,20 +162,20 @@ premise. See [`docs/design/06-scope-and-limits.md`](docs/design/06-scope-and-lim
 
 ## State
 
-Phases 0 and 1 are done. VFS, full resolver (`exports`, the `browser` field, subpaths,
-TypeScript extension rewriting), bundler, structured errors, snapshot and watch — with real
-React 19 building in ~200 ms warm.
+VFS, resolver, bundler and installer are all implemented. Two examples run in CI: one builds a
+React scaffold offline in ~200 ms warm, the other installs 36 packages off registry.npmjs.org —
+Radix, lucide, zustand, react-router, date-fns, zod — and bundles them in ~1.4 s.
 
-**The installer is phase 2.** Until then `install()` throws `InstallerNotConfiguredError` and
-`node_modules` arrives ready-made in `files`. The contract already exists, and so does the
-injection point.
+**Not done yet:** CSS modules, Tailwind and React Refresh. Persistent caching is a `PackageCache`
+away but has no implementation. The browser page has not been run in an actual browser.
 
 ## Development
 
 ```bash
 npm install
 npm test
-npm run example         # builds example/app in Node and writes the snapshot
+npm run example         # builds example/app in Node, offline
+npm run example:install # installs from the real registry and builds the result
 npm run example:browser # serves the page running that same dist/ in a browser
 ```
 
