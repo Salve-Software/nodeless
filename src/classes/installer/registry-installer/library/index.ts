@@ -7,6 +7,7 @@ export * from './untar.js';
 export * from './download-package.js';
 export * from './fetch-packument.js';
 export * from './fetch-tarball.js';
+export * from './optional-peers.js';
 export * from './pick-version.js';
 export * from './verify-integrity.js';
 export * from './build-lockfile.js';

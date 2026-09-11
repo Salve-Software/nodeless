@@ -9,6 +9,7 @@ function entry(overrides: Partial<InstalledPackage>): InstalledPackage {
     dir: '/node_modules/p',
     resolved: 'x',
     peerDependencies: {},
+    optionalPeers: new Set<string>(),
     ...overrides,
   };
 }
@@ -38,5 +39,20 @@ describe('collectPeerWarnings', () => {
         entry({ name: 'react', version: '19.1.0' }),
       ]),
     ).toEqual([]);
+  });
+});
+
+describe('collectPeerWarnings, optional peers', () => {
+  // Every Radix package marks @types/react optional; warning about it buries the real ones.
+  it('stays quiet about a peer the package marks optional', () => {
+    expect(
+      collectPeerWarnings([
+        entry({
+          name: 'plugin',
+          peerDependencies: { '@types/react': '*', react: '^19.0.0' },
+          optionalPeers: new Set(['@types/react']),
+        }),
+      ]),
+    ).toEqual(['plugin@1.0.0 wants peer react@^19.0.0, which is not installed']);
   });
 });

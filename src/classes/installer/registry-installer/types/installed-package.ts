@@ -6,4 +6,5 @@ export interface InstalledPackage {
   resolved: string;
   integrity?: string;
   peerDependencies: Record<string, string>;
+  optionalPeers: Set<string>;
 }

@@ -7,6 +7,7 @@ import type {
 import { dependenciesOf } from './dependencies-of.js';
 import { downloadPackage } from './download-package.js';
 import { fetchPackument } from './fetch-packument.js';
+import { optionalPeers } from './optional-peers.js';
 import { pickVersion } from './pick-version.js';
 import { planInstallDir } from './plan-install-dir.js';
 import { writePackage } from './write-package.js';
@@ -50,6 +51,7 @@ export async function walkDependencies(
           ? {}
           : { integrity: item.version.dist.integrity }),
         peerDependencies: item.version.peerDependencies ?? {},
+        optionalPeers: optionalPeers(item.version),
       });
       pending.push(...dependenciesOf(item.version, dir));
     }

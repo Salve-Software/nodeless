@@ -13,6 +13,7 @@ function entry(
     resolved: `https://registry.test/${name}.tgz`,
     integrity: 'sha512-abc',
     peerDependencies: {},
+    optionalPeers: new Set<string>(),
   };
 }
 
