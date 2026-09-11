@@ -7,3 +7,8 @@ export * from './posix-normalize.js';
 export * from './posix-parse.js';
 export * from './posix-relative.js';
 export * from './posix-resolve.js';
+export * from './rotate-right.js';
+export * from './sha256-compress.js';
+export * from './sha256-pad.js';
+export * from './sha256-schedule.js';
+export * from './sha256.js';
