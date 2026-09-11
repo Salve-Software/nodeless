@@ -13,16 +13,16 @@ import type {
   WatchOptions,
 } from '@/types/index.js';
 import { EsbuildBundler } from '@/classes/bundler/index.js';
+import { RegistryInstaller } from '@/classes/installer/index.js';
 import { NodeResolver } from '@/classes/resolver/index.js';
 import { MemoryVfs } from '@/classes/vfs/index.js';
 import { DEFAULT_CONDITIONS, DEFAULT_DEBOUNCE_MS } from '@/constants/index.js';
-import { InstallerNotConfiguredError } from '@/errors/index.js';
 
 /** The library surface: a VFS, a build, and a snapshot to move between front end and API. */
 export class NodelessProject {
   readonly vfs: Vfs;
   private readonly bundler: Bundler;
-  private readonly installer: Installer | undefined;
+  private readonly installer: Installer;
 
   constructor({
     files,
@@ -33,6 +33,9 @@ export class NodelessProject {
     conditions = DEFAULT_CONDITIONS,
     wasmURL,
     esbuild,
+    registryUrl,
+    packageCache,
+    fetch: fetchImpl,
   }: NodelessProjectOptions = {}) {
     this.vfs =
       vfs ??
@@ -45,16 +48,18 @@ export class NodelessProject {
         ...(wasmURL === undefined ? {} : { wasmURL }),
         ...(esbuild === undefined ? {} : { esbuild }),
       });
-    this.installer = installer;
+    this.installer =
+      installer ??
+      new RegistryInstaller({
+        vfs: this.vfs,
+        ...(registryUrl === undefined ? {} : { registryUrl }),
+        ...(packageCache === undefined ? {} : { cache: packageCache }),
+        ...(fetchImpl === undefined ? {} : { fetch: fetchImpl }),
+      });
   }
 
+  /** Reads `/package.json` and fills `/node_modules`. Never runs a lifecycle script. */
   async install(): Promise<InstallResult> {
-    if (!this.installer) {
-      throw new InstallerNotConfiguredError(
-        'No installer configured. Pass `installer` to the constructor, or ship /node_modules inside `files`.',
-      );
-    }
-
     return this.installer.install();
   }
 

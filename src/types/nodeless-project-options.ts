@@ -2,6 +2,7 @@ import type { Bundler } from './bundler.js';
 import type { EsbuildApi } from './esbuild-api.js';
 import type { FileInput } from './file-input.js';
 import type { Installer } from './installer.js';
+import type { PackageCache } from './package-cache.js';
 import type { VfsSnapshot } from './vfs-snapshot.js';
 import type { Vfs } from './vfs.js';
 
@@ -15,4 +16,7 @@ export interface NodelessProjectOptions {
   conditions?: string[];
   wasmURL?: string;
   esbuild?: EsbuildApi;
+  registryUrl?: string;
+  packageCache?: PackageCache;
+  fetch?: typeof fetch;
 }

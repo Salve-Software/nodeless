@@ -19,6 +19,7 @@ export type {
   Lockfile,
   LockfileEntry,
   NodelessProjectOptions,
+  PackageCache,
   RmOptions,
   Vfs,
   VfsSnapshot,

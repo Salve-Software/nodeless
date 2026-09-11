@@ -1,5 +1,4 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { InstallerNotConfiguredError } from '@/errors/index.js';
 import { bytesToText } from '@/library/index.js';
 import { NodelessProject } from '@/nodeless-project.class.js';
 import { readProjectFiles } from '@example/read-project-files.js';
@@ -101,12 +100,6 @@ describe('NodelessProject', () => {
   });
 
   describe('install', () => {
-    it('with no installer configured it says what to do', async () => {
-      await expect(new NodelessProject().install()).rejects.toThrow(
-        InstallerNotConfiguredError,
-      );
-    });
-
     it('delegates to the injected installer', async () => {
       const result = {
         installed: { react: '19.0.0' },
