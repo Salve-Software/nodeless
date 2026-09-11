@@ -17,6 +17,18 @@ describe('scopeForImporter', () => {
     expect(scopeForImporter(scope, '/src/index.css').extensions).toEqual(['.css']);
   });
 
+  // Sass and Less are stylesheets too, and by the time Tailwind reads one it is CSS.
+  it('treats every stylesheet language the same way', () => {
+    expect(scopeForImporter(scope, '/src/a.scss').conditions).toEqual([
+      'style',
+      'default',
+    ]);
+    expect(scopeForImporter(scope, '/src/a.less').conditions).toEqual([
+      'style',
+      'default',
+    ]);
+  });
+
   it('anything else keeps the scope it was given', () => {
     expect(scopeForImporter(scope, '/src/main.tsx')).toBe(scope);
     expect(scopeForImporter(scope, '')).toBe(scope);
