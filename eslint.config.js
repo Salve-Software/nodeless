@@ -6,11 +6,15 @@ import { config, configs } from 'typescript-eslint';
 
 export default config(
   {
+    // The example projects are input to the library, not part of it: they are built
+    // by nodeless rather than compiled by tsc, so they are outside every tsconfig.
     ignores: [
       'dist',
       'node_modules',
       'example/app',
+      'example/browser',
       'example/install',
+      'example/tailwind',
       'example/node/dist',
     ],
   },

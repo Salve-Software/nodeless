@@ -1,5 +1,6 @@
+import type { Server } from 'node:http';
 import { createReadStream, statSync } from 'node:fs';
-import { createServer, type Server } from 'node:http';
+import { createServer } from 'node:http';
 import { extname, join, normalize, resolve } from 'node:path';
 
 const REPO_ROOT = resolve(import.meta.dirname, '../..');
