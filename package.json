@@ -45,7 +45,8 @@
     "example": "tsx example/node/build.ts",
     "example:install": "tsx example/node/install.ts",
     "example:tailwind": "tsx example/node/tailwind.ts",
-    "example:browser": "npm run build && npx --yes serve@14 . -l 5173",
+    "playground": "npm run build && tsx example/node/playground.ts",
+    "example:browser:test": "npm run build && tsx example/node/browser.ts",
     "prepare": "husky || true"
   },
   "dependencies": {
@@ -68,6 +69,7 @@
     "eslint-plugin-import-x": "^4.17.1",
     "husky": "^9.1.7",
     "lint-staged": "^17.3.0",
+    "playwright": "^1.63.0",
     "postcss": "^8.5.28",
     "prettier": "^3.9.6",
     "react": "^19.0.0",
