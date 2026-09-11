@@ -3,63 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>nodeless — the same code, in the browser</title>
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        background: #0b0d10;
-        color: #e6e8eb;
-        display: grid;
-        font-family: ui-sans-serif, system-ui, sans-serif;
-        gap: 1rem;
-        grid-template-rows: auto 1fr;
-        height: 100vh;
-        margin: 0;
-        padding: 1rem;
-      }
-      header {
-        align-items: baseline;
-        display: flex;
-        gap: 1rem;
-      }
-      h1 {
-        font-size: 1rem;
-        margin: 0;
-      }
-      #status {
-        color: #8b93a1;
-        font-size: 0.85rem;
-        white-space: pre-wrap;
-      }
-      #status[data-state='error'] {
-        color: #ff6b6b;
-      }
-      main {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: 1fr 1fr;
-        min-height: 0;
-      }
-      textarea,
-      iframe {
-        background: #14181d;
-        border: 1px solid #2b3038;
-        border-radius: 8px;
-        height: 100%;
-        width: 100%;
-      }
-      textarea {
-        color: inherit;
-        font-family: ui-monospace, monospace;
-        padding: 1rem;
-        resize: none;
-      }
-      iframe {
-        background: #fff;
-      }
-    </style>
+    <title>nodeless playground</title>
+    <link rel="stylesheet" href="./playground.css" />
     <!--
       The nodeless dist imports esbuild-wasm, resolve.exports, semver and fflate by
       name. The import map resolves all four with no bundling step on this page.
@@ -67,107 +12,53 @@
     <script type="importmap">
       {
         "imports": {
-          "esbuild-wasm": "https://esm.sh/esbuild-wasm@^0.25.10",
-          "resolve.exports": "https://esm.sh/resolve.exports@^2.0.3",
-          "semver": "https://esm.sh/semver@^7.8.5",
-          "fflate": "https://esm.sh/fflate@^0.8.3"
+          "esbuild-wasm": "https://unpkg.com/esbuild-wasm@0.25.12/esm/browser.min.js",
+          "resolve.exports": "https://esm.sh/resolve.exports@2.0.3",
+          "semver": "https://esm.sh/semver@7.8.5",
+          "fflate": "https://esm.sh/fflate@0.8.3"
         }
       }
     </script>
   </head>
   <body>
     <header>
-      <h1>nodeless in the browser</h1>
-      <span id="status">loading…</span>
+      <div class="brand">
+        <strong>nodeless</strong>
+        <span>playground</span>
+      </div>
+      <div class="spacer"></div>
+      <span class="pill" id="status" data-state="busy">starting</span>
+      <label class="toggle">
+        <input type="checkbox" id="auto" checked />
+        build on change
+      </label>
+      <button class="primary" id="build" disabled>Build <kbd>⌘↵</kbd></button>
     </header>
+
     <main>
-      <textarea id="editor" spellcheck="false"></textarea>
-      <iframe id="preview" title="preview"></iframe>
+      <section class="panel">
+        <div class="panel-bar" id="tabs" role="tablist"></div>
+        <div id="editor"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-bar">
+          <div class="chrome">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span class="url">preview</span>
+          </div>
+        </div>
+        <div id="preview-host">
+          <div class="placeholder" id="placeholder">waiting for the first build…</div>
+        </div>
+      </section>
     </main>
 
-    <script type="module">
-      import * as esbuild from 'esbuild-wasm';
-      // Exactly the same `dist/` the product API consumes in Node.
-      import { NodelessProject } from '../../dist/index.js';
+    <footer>
+      <div class="status-line" id="meta"></div>
+      <div class="diagnostics" id="diagnostics" hidden></div>
+    </footer>
 
-      const SOURCES = [
-        '/package.json',
-        '/index.html',
-        '/src/main.tsx',
-        '/src/App.tsx',
-        '/src/app.css',
-      ];
-      const EDITED_FILE = '/src/App.tsx';
-
-      const status = document.getElementById('status');
-      const editor = document.getElementById('editor');
-      const preview = document.getElementById('preview');
-
-      // The sources come from example/app, so this page and `npm run example` build
-      // the very same project. There is no node_modules here and no snapshot either.
-      const files = Object.fromEntries(
-        await Promise.all(
-          SOURCES.map(async (path) => [
-            path,
-            await fetch(`../app${path}`).then((r) => r.text()),
-          ]),
-        ),
-      );
-
-      const project = new NodelessProject({
-        files,
-        wasmURL: `https://unpkg.com/esbuild-wasm@${esbuild.version}/esbuild.wasm`,
-      });
-
-      report('installing from registry.npmjs.org…');
-
-      const install = await project.install();
-
-      report(`installed ${Object.keys(install.installed).length} packages`);
-
-      editor.value = project.vfs.readText(EDITED_FILE);
-      editor.addEventListener('input', () => {
-        project.vfs.writeFile(EDITED_FILE, editor.value);
-      });
-
-      project.watch(render);
-      await render();
-
-      async function render() {
-        report('building…');
-
-        const result = await project.build({ mode: 'development' });
-
-        if (!result.ok) {
-          report(
-            result.errors
-              .map((error) => `${error.file ?? ''}:${error.line ?? 0} ${error.text}`)
-              .join('\n'),
-            'error',
-          );
-          return;
-        }
-
-        report(`${result.durationMs} ms`);
-        preview.srcdoc = inlineAssets(result.files);
-      }
-
-      function report(text, state = 'ok') {
-        status.dataset.state = state;
-        status.textContent = text;
-      }
-
-      /** The iframe cannot see the VFS: assets become Blob URLs inside the HTML. */
-      function inlineAssets(built) {
-        let html = new TextDecoder().decode(built['index.html']);
-
-        for (const name of ['bundle.js', 'bundle.css']) {
-          if (!built[name]) continue;
-          html = html.replace(`./${name}`, URL.createObjectURL(new Blob([built[name]])));
-        }
-
-        return html;
-      }
-    </script>
+    <script type="module" src="./playground.js"></script>
   </body>
 </html>
