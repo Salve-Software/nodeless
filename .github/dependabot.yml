@@ -1,0 +1,32 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+
+    commit-message:
+      prefix: fix
+      prefix-development: chore
+      include: scope
+
+    # Tooling minor and patch updates are grouped so they do not become a flood of PRs.
+    # Runtime dependencies (esbuild-wasm, resolve.exports) come on their own and with
+    # the `fix` prefix, because they change the behaviour of the published package.
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: ci
