@@ -63,6 +63,7 @@ export function createVfsPlugin({
         loadFromVfs(
           {
             vfs,
+            resolver,
             ...(cssTransform ? { cssTransform } : {}),
             ...(assetLimit === undefined ? {} : { assetLimit }),
           },
