@@ -9,7 +9,7 @@ export async function loadPeer(name: string, reason: string): Promise<unknown> {
       pending.delete(name);
 
       throw new Error(
-        `${reason} That needs the \`${name}\` package next to nodeless. Install it, or pass your own transform.`,
+        `${reason} That needs the \`${name}\` package next to nodeless. Install it, or bring a plugin of your own.`,
       );
     });
 

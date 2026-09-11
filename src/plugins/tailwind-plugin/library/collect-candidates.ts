@@ -1,9 +1,9 @@
 import type { Vfs } from '@/types/index.js';
+import { extname } from '@/library/index.js';
 import {
   CANDIDATE_PATTERN,
   SCANNED_EXTENSIONS,
-} from '@/classes/transform/tailwind-transform/constants/index.js';
-import { extname } from '@/library/index.js';
+} from '@/plugins/tailwind-plugin/constants/index.js';
 
 /** Everything outside node_modules is scanned, which is a superset of what `@source` asks for. */
 export function collectCandidates(vfs: Vfs): string[] {
