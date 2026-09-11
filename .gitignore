@@ -1,6 +1,5 @@
 node_modules/
 dist/
 example/node/dist/
-example/browser/snapshot.json
 *.log
 .DS_Store

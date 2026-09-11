@@ -4,7 +4,6 @@ import { NodelessProject } from '@/index.js';
 import { readProjectFiles } from '@example/read-project-files.js';
 
 const OUT_DIR = resolve(import.meta.dirname, 'dist');
-const SNAPSHOT_FILE = resolve(import.meta.dirname, '../browser/snapshot.json');
 const BUDGET_MS = 500;
 
 const project = new NodelessProject({ files: readProjectFiles() });
@@ -32,12 +31,17 @@ for (const [name, bytes] of Object.entries(result.files)) {
 
 for (const warning of result.warnings) console.warn('  warning:', formatMessage(warning));
 
-// The same snapshot an API would ship to the front end. `example/browser` feeds on it.
-mkdirSync(dirname(SNAPSHOT_FILE), { recursive: true });
-writeFileSync(SNAPSHOT_FILE, JSON.stringify(project.snapshot()));
+// What an API would ship to a front end. Rebuilding from it has to give the same bytes.
+const clone = new NodelessProject({ snapshot: project.snapshot() });
+const rebuilt = await clone.build();
+
+if (!rebuilt.ok || !sameBytes(rebuilt.files['bundle.js'], result.files['bundle.js'])) {
+  console.error('rebuilding from the snapshot gave a different bundle');
+  process.exit(1);
+}
 
 console.log(`\ndist at ${OUT_DIR}`);
-console.log(`snapshot at ${SNAPSHOT_FILE}`);
+console.log('snapshot round trip: identical bundle');
 console.log(
   `warm build: ${String(result.durationMs)} ms (budget ${String(BUDGET_MS)} ms)`,
 );
@@ -45,6 +49,15 @@ console.log(
 if (result.durationMs > BUDGET_MS) {
   console.error(`warm build went over the ${String(BUDGET_MS)} ms budget`);
   process.exit(1);
+}
+
+function sameBytes(a: Uint8Array | undefined, b: Uint8Array | undefined): boolean {
+  return (
+    a !== undefined &&
+    b !== undefined &&
+    a.length === b.length &&
+    a.every((byte, i) => byte === b[i])
+  );
 }
 
 function formatSize(bytes: number): string {
