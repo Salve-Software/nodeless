@@ -58,6 +58,7 @@
     "example": "tsx example/node/build.ts",
     "example:install": "tsx example/node/install.ts",
     "example:tailwind": "tsx example/node/tailwind.ts",
+    "example:vite": "tsx example/node/vite.ts",
     "playground": "npm run build && tsx example/node/playground.ts",
     "example:browser:test": "npm run build && tsx example/node/browser.ts",
     "prepare": "husky || true"

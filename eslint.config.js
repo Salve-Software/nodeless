@@ -15,6 +15,7 @@ export default config(
       'example/browser',
       'example/install',
       'example/tailwind',
+      'example/vite',
       'example/node/dist',
     ],
   },

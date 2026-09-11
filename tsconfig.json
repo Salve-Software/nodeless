@@ -17,5 +17,12 @@
       "@example/*": ["./example/*"]
     }
   },
-  "include": ["src/**/*.ts", "example/**/*.ts", "*.config.ts"]
+  "include": ["src/**/*.ts", "example/**/*.ts", "*.config.ts"],
+  "exclude": [
+    "example/app",
+    "example/browser",
+    "example/install",
+    "example/tailwind",
+    "example/vite"
+  ]
 }
