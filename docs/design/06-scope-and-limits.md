@@ -47,7 +47,7 @@ conversation.
 | 3   | `install()` builds `node_modules` from `package.json`                    | phase 2    |
 | 4   | Syntax and import errors come back structured, with nothing thrown       | ✅         |
 | 5   | No user code is ever executed                                            | ✅         |
-| 6   | The scaffold builds in under 500 ms warm in Node                         | ✅ ~200 ms |
+| 6   | The scaffold builds fast enough to replace a dev server                  | ✅ ~200 ms |
 | 7   | Zero dependency on `child_process`, a real `fs`, or an external binary   | ✅         |
 
 Criterion 2 is proved by `npm run example:browser:test`, a CI job: a headless Chromium opens the

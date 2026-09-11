@@ -28,7 +28,7 @@ npm run example
 
 Builds the VFS from disk, builds the project, writes `example/node/dist/` and prints the sizes.
 Then it recreates the project from a snapshot and checks the rebuild comes out byte for byte
-identical. Fails if the warm build goes over 500 ms — acceptance criterion 6, and it runs in CI.
+identical. Fails if the warm build goes over `BUILD_BUDGET_MS` (2 s), which guards against a regression rather than against slow hardware.
 
 ## From the real registry
 

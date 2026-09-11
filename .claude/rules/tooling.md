@@ -98,7 +98,8 @@ and `no-restricted-imports` over Node builtins.
 `npm run example` and `npm run example:install`.
 
 The first example is the offline smoke test — it builds the real React scaffold and fails if the
-warm build goes over 500 ms. The second is the only end-to-end proof of the installer: it really
+warm build goes over `BUILD_BUDGET_MS`, which is loose because a runner is several times
+slower than a laptop. The second is the only end-to-end proof of the installer: it really
 talks to registry.npmjs.org and really bundles Radix, lucide, zustand and react-router. It is
 also the only step in CI that needs the network.
 

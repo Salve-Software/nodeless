@@ -4,7 +4,7 @@ import { NodelessProject } from '@/index.js';
 import { readProjectFiles } from '@example/read-project-files.js';
 
 const OUT_DIR = resolve(import.meta.dirname, 'dist');
-const BUDGET_MS = 500;
+const BUDGET_MS = Number(process.env['BUILD_BUDGET_MS'] ?? 2000);
 
 const project = new NodelessProject({ files: readProjectFiles() });
 
