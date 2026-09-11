@@ -6,5 +6,6 @@ export * from './dirname.js';
 export * from './extname.js';
 export * from './join-path.js';
 export * from './normalize-path.js';
+export * from './parse-specifier.js';
 export * from './text-to-bytes.js';
 export * from './to-bytes.js';

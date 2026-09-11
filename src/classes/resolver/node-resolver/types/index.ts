@@ -1,4 +1,3 @@
-export type * from './bare-specifier.js';
 export type * from './browser-mapping.js';
 export type * from './node-resolver-options.js';
 export type * from './package-manifest.js';

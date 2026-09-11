@@ -1,3 +1,4 @@
+export type * from './bare-specifier.js';
 export type * from './build-failure.js';
 export type * from './build-message.js';
 export type * from './build-mode.js';
@@ -5,6 +6,7 @@ export type * from './build-options.js';
 export type * from './build-result.js';
 export type * from './build-success.js';
 export type * from './bundler.js';
+export type * from './cdn-options.js';
 export type * from './css-transform.js';
 export type * from './disposer.js';
 export type * from './esbuild-api.js';

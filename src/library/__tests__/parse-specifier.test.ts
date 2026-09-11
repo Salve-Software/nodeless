@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseSpecifier } from '@/classes/resolver/node-resolver/library/index.js';
+import { parseSpecifier } from '@/library/index.js';
 
 describe('parseSpecifier', () => {
   it('a package without a subpath gets the dot subpath', () => {

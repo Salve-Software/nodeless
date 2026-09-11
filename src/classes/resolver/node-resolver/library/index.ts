@@ -7,7 +7,6 @@ export * from './is-relative-specifier.js';
 export * from './load-as-directory.js';
 export * from './load-as-file.js';
 export * from './node-modules-dirs.js';
-export * from './parse-specifier.js';
 export * from './read-manifest.js';
 export * from './resolve-exports-subpath.js';
 export * from './resolve-in-package.js';

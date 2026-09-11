@@ -5,7 +5,7 @@ import type {
 import type { ResolveRequest, ResolveResult } from '@/types/index.js';
 import { ROOT_PATH } from '@/constants/index.js';
 import { ResolveError } from '@/errors/index.js';
-import { dirname, joinPath, normalizePath } from '@/library/index.js';
+import { dirname, joinPath, normalizePath, parseSpecifier } from '@/library/index.js';
 import { applyBrowserAlias } from './apply-browser-alias.js';
 import { applyBrowserRedirect } from './apply-browser-redirect.js';
 import { findPackageScope } from './find-package-scope.js';
@@ -14,7 +14,6 @@ import { isRelativeSpecifier } from './is-relative-specifier.js';
 import { loadAsDirectory } from './load-as-directory.js';
 import { loadAsFile } from './load-as-file.js';
 import { nodeModulesDirs } from './node-modules-dirs.js';
-import { parseSpecifier } from './parse-specifier.js';
 import { resolveInPackage } from './resolve-in-package.js';
 
 /** Node's resolution algorithm over the VFS. Synchronous, because the VFS is. */

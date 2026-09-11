@@ -1,4 +1,4 @@
-import type { BareSpecifier } from '@/classes/resolver/node-resolver/types/index.js';
+import type { BareSpecifier } from '@/types/index.js';
 
 export function parseSpecifier(specifier: string): BareSpecifier {
   const segments = specifier.split('/');
