@@ -10,7 +10,13 @@ import type {
   Vfs,
 } from '@/types/index.js';
 import { ROOT_PATH } from '@/constants/index.js';
-import { bytesToText, normalizePath, textToBytes } from '@/library/index.js';
+import {
+  bytesToText,
+  initializeEsbuild,
+  loadEsbuild,
+  normalizePath,
+  textToBytes,
+} from '@/library/index.js';
 import {
   ASSET_NAMES,
   BUNDLE_NAME,
@@ -25,8 +31,6 @@ import {
   collectOutputs,
   collectPublicFiles,
   createVfsPlugin,
-  initializeEsbuild,
-  loadEsbuild,
   readDependencies,
   renderIndexHtml,
   resolveEntry,
