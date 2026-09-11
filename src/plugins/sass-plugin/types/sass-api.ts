@@ -1,7 +1,4 @@
-export interface SassImporter {
-  canonicalize(url: string): URL | null;
-  load(url: URL): { contents: string; syntax: 'scss' | 'indented' | 'css' } | null;
-}
+import type { SassImporter } from './sass-importer.js';
 
 /** The slice of `sass` this uses, declared here so the peer can be absent. */
 export interface SassApi {
