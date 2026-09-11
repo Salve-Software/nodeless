@@ -25,6 +25,7 @@ function scopeWith(
     cache,
     packuments: new Map(),
     downloads: new Map(),
+    workspaces: new Map(),
   };
 }
 

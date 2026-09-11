@@ -1,11 +1,12 @@
 import type { InstallScope, RegistryInstallerOptions } from './types/index.js';
-import type { InstallResult, Installer } from '@/types/index.js';
+import type { InstallOptions, InstallResult, Installer } from '@/types/index.js';
 import { MemoryPackageCache } from '@/classes/installer/memory-package-cache/index.js';
 import { LOCKFILE_PATH, REGISTRY_URL } from './constants/index.js';
 import {
   buildLockfile,
   collectPeerWarnings,
   readRootDependencies,
+  readWorkspaces,
   walkDependencies,
 } from './library/index.js';
 
@@ -26,14 +27,16 @@ export class RegistryInstaller implements Installer {
       cache,
       packuments: new Map(),
       downloads: new Map(),
+      workspaces: new Map(),
     };
   }
 
-  async install(): Promise<InstallResult> {
-    const installed = await walkDependencies(
-      this.scope,
-      readRootDependencies(this.scope.vfs),
-    );
+  async install(options?: InstallOptions): Promise<InstallResult> {
+    // Read every time: a workspace package can be written into the VFS between installs.
+    this.scope.workspaces = readWorkspaces(this.scope.vfs);
+
+    const roots = readRootDependencies(this.scope.vfs, options);
+    const { installed, warnings } = await walkDependencies(this.scope, roots);
     const lockfile = buildLockfile(installed);
 
     this.scope.vfs.writeFile(LOCKFILE_PATH, `${JSON.stringify(lockfile, null, 2)}\n`);
@@ -42,7 +45,7 @@ export class RegistryInstaller implements Installer {
       installed: Object.fromEntries(
         installed.map((entry) => [entry.name, entry.version]),
       ),
-      warnings: collectPeerWarnings(installed),
+      warnings: [...warnings, ...collectPeerWarnings(installed)],
       lockfile,
     };
   }

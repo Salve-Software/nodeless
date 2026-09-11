@@ -1,3 +1,4 @@
+export type * from './install-progress.js';
 export type * from './install-request.js';
 export type * from './install-scope.js';
 export type * from './installed-package.js';

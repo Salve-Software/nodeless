@@ -12,6 +12,7 @@ function scopeWith(fetchImpl: typeof fetch): InstallScope {
     cache: new MemoryPackageCache(),
     packuments: new Map(),
     downloads: new Map(),
+    workspaces: new Map(),
   };
 }
 
