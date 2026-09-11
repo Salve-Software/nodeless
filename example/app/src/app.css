@@ -1,0 +1,27 @@
+:root {
+  color-scheme: dark;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #0b0d10;
+  color: #e6e8eb;
+}
+
+.app {
+  display: grid;
+  gap: 1rem;
+  padding: 3rem;
+  place-content: start;
+}
+
+.app button {
+  border: 1px solid #2b3038;
+  border-radius: 8px;
+  background: #14181d;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.6rem 1rem;
+}
