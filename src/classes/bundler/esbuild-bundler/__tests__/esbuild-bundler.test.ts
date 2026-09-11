@@ -220,7 +220,14 @@ describe('EsbuildBundler, transforms', () => {
     return new EsbuildBundler({
       vfs,
       resolver: new NodeResolver({ vfs }),
-      transforms: [{ name: 'fake', matches: ({ path }) => path.endsWith('.css'), apply }],
+      transforms: [
+        {
+          name: 'fake',
+          stage: 'content',
+          matches: ({ path }) => path.endsWith('.css'),
+          apply,
+        },
+      ],
     });
   }
 
@@ -248,6 +255,7 @@ describe('EsbuildBundler, transforms', () => {
       transforms: [
         {
           name: 'spy',
+          stage: 'content' as const,
           matches: ({ path }) => path.endsWith('.css'),
           apply: async ({ path, content }) => {
             seen.push(path);

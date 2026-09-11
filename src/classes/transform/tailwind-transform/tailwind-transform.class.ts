@@ -17,6 +17,7 @@ import { collectCandidates } from './library/index.js';
 /** Compiles a stylesheet that uses Tailwind directives. Plain CSS never reaches it. */
 export class TailwindTransform implements SourceTransform {
   readonly name = 'tailwind';
+  readonly stage = 'content' as const;
   private readonly tailwind: TailwindApi | undefined;
 
   constructor({ tailwind }: TailwindTransformOptions = {}) {

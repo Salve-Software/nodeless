@@ -22,7 +22,7 @@ function options(extra: { transforms?: SourceTransform[]; assetLimit?: number } 
 }
 
 function transform(apply: SourceTransform['apply']): SourceTransform {
-  return { name: 'fake', matches: () => true, apply };
+  return { name: 'fake', stage: 'content', matches: () => true, apply };
 }
 
 function contentsOf(result: { contents?: string | Uint8Array }): string {

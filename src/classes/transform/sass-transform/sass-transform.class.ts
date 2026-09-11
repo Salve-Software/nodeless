@@ -8,6 +8,7 @@ import { createVfsImporter } from './library/index.js';
 /** Compiles `.scss` and `.sass` to CSS. The same shape as every other transform. */
 export class SassTransform implements SourceTransform {
   readonly name = 'sass';
+  readonly stage = 'language' as const;
   private readonly sass: SassApi | undefined;
 
   constructor({ sass }: SassTransformOptions = {}) {
