@@ -5,7 +5,15 @@ import { flatConfigs as importX } from 'eslint-plugin-import-x';
 import { config, configs } from 'typescript-eslint';
 
 export default config(
-  { ignores: ['dist', 'node_modules', 'example/app', 'example/node/dist'] },
+  {
+    ignores: [
+      'dist',
+      'node_modules',
+      'example/app',
+      'example/install',
+      'example/node/dist',
+    ],
+  },
 
   js.configs.recommended,
   ...configs.recommendedTypeChecked,
