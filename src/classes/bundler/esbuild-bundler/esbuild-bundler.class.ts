@@ -1,10 +1,10 @@
 import type { EsbuildBundlerOptions } from './types/index.js';
+import type { PluginContainer } from '@/classes/plugin/index.js';
 import type {
   BuildMessage,
   BuildOptions,
   BuildResult,
   Bundler,
-  SourceTransform,
   EsbuildApi,
   Resolver,
   Vfs,
@@ -44,14 +44,14 @@ export class EsbuildBundler implements Bundler {
   private readonly resolver: Resolver;
   private readonly esbuild: EsbuildApi | undefined;
   private readonly wasmURL: string | undefined;
-  private readonly transforms: SourceTransform[] | undefined;
+  private readonly container: PluginContainer | undefined;
 
-  constructor({ vfs, resolver, esbuild, wasmURL, transforms }: EsbuildBundlerOptions) {
+  constructor({ vfs, resolver, esbuild, wasmURL, container }: EsbuildBundlerOptions) {
     this.vfs = vfs;
     this.resolver = resolver;
     this.esbuild = esbuild;
     this.wasmURL = wasmURL;
-    this.transforms = transforms;
+    this.container = container;
   }
 
   async build(options: BuildOptions = {}): Promise<BuildResult> {
@@ -74,6 +74,15 @@ export class EsbuildBundler implements Bundler {
     try {
       const api = await this.api();
       const mode = options.mode ?? 'production';
+      const env = buildImportMetaEnv(mode, options.env);
+
+      await this.container?.configResolved({
+        root: ROOT_PATH,
+        mode,
+        entry,
+        outdir,
+        env: options.env ?? {},
+      });
       const result = await api.build({
         entryPoints: { [BUNDLE_NAME]: entry },
         bundle: true,
@@ -90,7 +99,7 @@ export class EsbuildBundler implements Bundler {
         sourcemap: (options.sourcemap ?? mode === 'development') ? 'inline' : false,
         define: {
           'process.env.NODE_ENV': JSON.stringify(mode),
-          'import.meta.env': JSON.stringify(buildImportMetaEnv(mode, options.env)),
+          'import.meta.env': JSON.stringify(env),
           ...options.define,
         },
         plugins: [
@@ -100,7 +109,7 @@ export class EsbuildBundler implements Bundler {
             resolver: this.resolver,
             external: options.external ?? [],
             warnings,
-            ...(this.transforms === undefined ? {} : { transforms: this.transforms }),
+            ...(this.container === undefined ? {} : { container: this.container }),
             assetLimit: options.assetLimit ?? DEFAULT_ASSET_LIMIT,
             ...(options.cdn === undefined
               ? {}

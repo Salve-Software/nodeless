@@ -15,16 +15,25 @@ export function createVfsPlugin({
   resolver,
   external,
   warnings,
-  transforms,
+  container,
   cdn,
   assetLimit,
 }: VfsPluginOptions): Plugin {
   return {
     name: 'nodeless-vfs',
     setup(build) {
-      build.onResolve({ filter: /.*/ }, (args) => {
+      build.onResolve({ filter: /.*/ }, async (args) => {
         if (isExternalSpecifier(args.path, external)) {
           return { path: args.path, external: true };
+        }
+
+        // A plugin gets first refusal, which is what makes a virtual module possible.
+        const claimed = await container?.resolveId(args.path, args.importer);
+
+        if (claimed) {
+          return claimed.external
+            ? { path: claimed.id, external: true }
+            : { path: claimed.id, namespace: VFS_NAMESPACE };
         }
 
         try {
@@ -63,8 +72,7 @@ export function createVfsPlugin({
         loadFromVfs(
           {
             vfs,
-            resolver,
-            ...(transforms ? { transforms } : {}),
+            ...(container ? { container } : {}),
             ...(assetLimit === undefined ? {} : { assetLimit }),
           },
           args.path,
