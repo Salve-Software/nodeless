@@ -1,5 +1,6 @@
 import type { BuildMode } from './build-mode.js';
 import type { CdnOptions } from './cdn-options.js';
+import type { EsbuildPlugin } from './esbuild-plugin.js';
 
 /** Every field overrides one default. The defaults are listed in the README. */
 export interface BuildOptions {
@@ -21,4 +22,6 @@ export interface BuildOptions {
   assetLimit?: number;
   /** Merged into `import.meta.env`, which is otherwise undefined at runtime. */
   env?: Record<string, string>;
+  /** esbuild plugins, run before the VFS one so they can claim a path first. */
+  plugins?: EsbuildPlugin[];
 }

@@ -12,6 +12,7 @@ export type {
   SourceTransform,
   Disposer,
   EsbuildApi,
+  EsbuildPlugin,
   FileInput,
   FileMap,
   FileStat,

@@ -90,6 +90,7 @@ export class EsbuildBundler implements Bundler {
           ...options.define,
         },
         plugins: [
+          ...(options.plugins ?? []),
           createVfsPlugin({
             vfs: this.vfs,
             resolver: this.resolver,
