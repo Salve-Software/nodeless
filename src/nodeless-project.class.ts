@@ -1,0 +1,90 @@
+import type {
+  BuildOptions,
+  BuildResult,
+  Bundler,
+  Disposer,
+  InstallResult,
+  Installer,
+  NodelessProjectOptions,
+  Vfs,
+  VfsSnapshot,
+  VfsWatchEvent,
+  VfsWatchListener,
+  WatchOptions,
+} from '@/types/index.js';
+import { EsbuildBundler } from '@/classes/bundler/index.js';
+import { NodeResolver } from '@/classes/resolver/index.js';
+import { MemoryVfs } from '@/classes/vfs/index.js';
+import { DEFAULT_CONDITIONS, DEFAULT_DEBOUNCE_MS } from '@/constants/index.js';
+import { InstallerNotConfiguredError } from '@/errors/index.js';
+
+/** The library surface: a VFS, a build, and a snapshot to move between front end and API. */
+export class NodelessProject {
+  readonly vfs: Vfs;
+  private readonly bundler: Bundler;
+  private readonly installer: Installer | undefined;
+
+  constructor({
+    files,
+    snapshot,
+    vfs,
+    bundler,
+    installer,
+    conditions = DEFAULT_CONDITIONS,
+    wasmURL,
+    esbuild,
+  }: NodelessProjectOptions = {}) {
+    this.vfs =
+      vfs ??
+      new MemoryVfs({ ...(files ? { files } : {}), ...(snapshot ? { snapshot } : {}) });
+    this.bundler =
+      bundler ??
+      new EsbuildBundler({
+        vfs: this.vfs,
+        resolver: new NodeResolver({ vfs: this.vfs, conditions }),
+        ...(wasmURL === undefined ? {} : { wasmURL }),
+        ...(esbuild === undefined ? {} : { esbuild }),
+      });
+    this.installer = installer;
+  }
+
+  async install(): Promise<InstallResult> {
+    if (!this.installer) {
+      throw new InstallerNotConfiguredError(
+        'No installer configured. Pass `installer` to the constructor, or ship /node_modules inside `files`.',
+      );
+    }
+
+    return this.installer.install();
+  }
+
+  /** Does not write to the VFS. That is what lets `watch` run without a build firing itself. */
+  async build(options?: BuildOptions): Promise<BuildResult> {
+    return this.bundler.build(options);
+  }
+
+  watch(
+    listener: VfsWatchListener,
+    { debounceMs = DEFAULT_DEBOUNCE_MS }: WatchOptions = {},
+  ): Disposer {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let last: VfsWatchEvent | undefined;
+
+    return this.vfs.watch((event) => {
+      last = event;
+      if (timer !== undefined) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = undefined;
+        if (last) listener(last);
+      }, debounceMs);
+    });
+  }
+
+  snapshot(): VfsSnapshot {
+    return this.vfs.snapshot();
+  }
+
+  async dispose(): Promise<void> {
+    return this.bundler.dispose();
+  }
+}
