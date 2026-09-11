@@ -99,11 +99,14 @@ the way TypeScript would.
 ### Install
 
 ```ts
-const { installed, warnings, lockfile } = await project.install({ dev: true });
+const { installed, warnings, lockfile } = await project.install({ dev: ['tailwindcss'] });
 ```
 
-Reads `dependencies` from `/package.json` and writes the packages into `/node_modules`. Pass
-`dev` to include `devDependencies`, which is where a Vite project keeps its CSS toolchain.
+Reads `dependencies` from `/package.json` and writes the packages into `/node_modules`.
+
+`dev` brings in `devDependencies`, which is where a Vite project keeps its CSS toolchain. Name
+the ones you want: `true` takes all of them, and on a real Vite project that is 165 packages and
+65 MB to get the one you were after.
 
 A package listed under `workspaces` is taken from the VFS instead of the registry. A package
 that cannot be resolved at all becomes a `warnings` entry rather than failing the whole install,

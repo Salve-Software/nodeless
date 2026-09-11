@@ -31,14 +31,22 @@ read /package.json → dependencies
 goes does not — otherwise two dependents could both claim the root `node_modules` for different
 versions of the same package, and whichever wrote last would win at random.
 
-## devDependencies are opt-in
+## devDependencies are opt-in, and worth naming
 
 A Vite project keeps `tailwindcss` and `@tailwindcss/vite` in `devDependencies`, because there
 they are build tooling rather than runtime dependencies. Installing only `dependencies` leaves
-the CSS with nothing to resolve. `install({ dev: true })` brings them in.
+the CSS with nothing to resolve.
 
-It stays off by default because most of what lives there — eslint, vitest, typescript — is never
-imported by the code being built, and downloading it into a browser VFS is pure waste.
+`dev` takes a list for a reason. Measured on a React 18 + Vite + Tailwind v4 manifest:
+
+| `dev`             | packages | time  | VFS     |
+| ----------------- | -------- | ----- | ------- |
+| `false`           | 9        | 1.4 s | 9.0 MB  |
+| `['tailwindcss']` | 10       | 0.9 s | 9.8 MB  |
+| `true`            | 164      | 3.0 s | 64.8 MB |
+
+`true` drags in vite, eslint, typescript and every `@types` package, none of which the code
+being built ever imports. In a browser VFS that is 55 MB of waste to get one package.
 
 ## Workspaces
 

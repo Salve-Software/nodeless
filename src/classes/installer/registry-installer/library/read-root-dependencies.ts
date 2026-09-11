@@ -19,7 +19,7 @@ export function readRootDependencies(
 
   const manifest = parse(vfs.readText(PACKAGE_JSON_PATH));
   const declared = {
-    ...(dev ? manifest.devDependencies : {}),
+    ...wanted(manifest.devDependencies ?? {}, dev),
     ...manifest.dependencies,
   };
 
@@ -28,6 +28,20 @@ export function readRootDependencies(
     range,
     parentDir: ROOT_PATH,
   }));
+}
+
+function wanted(
+  devDependencies: Record<string, string>,
+  dev: boolean | string[],
+): Record<string, string> {
+  if (dev === false) return {};
+  if (dev === true) return devDependencies;
+
+  return Object.fromEntries(
+    dev
+      .filter((name) => name in devDependencies)
+      .map((name) => [name, devDependencies[name] ?? '']),
+  );
 }
 
 function parse(text: string): {

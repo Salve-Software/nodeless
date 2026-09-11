@@ -1,4 +1,7 @@
 export interface InstallOptions {
-  /** Also install `devDependencies`. A Vite project keeps its CSS toolchain there. */
-  dev?: boolean;
+  /**
+   * Which `devDependencies` to include. `true` takes all of them, which on a Vite project
+   * means vite, eslint and typescript too; a list takes only the ones named.
+   */
+  dev?: boolean | string[];
 }
