@@ -38,6 +38,14 @@ Allowed as module-private functions: table dispatch, error construction, and str
 `resolveSpecifier` back, and a separate file would create a circular import inside `library/`.
 It is marked with a comment in place.
 
+## Two places the rules bend, and why
+
+- **`max-params` is off under `src/classes/shims/`.** Those functions mirror Node's own
+  signatures: `Buffer.toString(encoding, start, end)` is three parameters because that is what
+  the toolchain calls. Everywhere else the rule holds.
+- **`no-implied-eval` is disabled on exactly one line**, in `evaluate-module.ts`. It is the
+  library's premise, and it is marked in place rather than hidden in the config.
+
 ## At most 2 parameters
 
 A function, method or constructor with more than 2 parameters takes **an object**. Enforced by
@@ -109,14 +117,21 @@ src/
 ├── nodeless-project.class.ts   ← the facade, the only loose class
 ├── types/                      ← the global contracts, one type per file
 ├── constants/  errors/  library/
+├── plugins/                    ← the built-in plugins, one folder each
 └── classes/
-    └── vfs/  resolver/  bundler/
+    └── vfs/  resolver/  bundler/  installer/  shims/  runtime/  plugin/  config/
 ```
 
-A class folder **never** sits loose in `classes/` — always inside a category. Two exceptions,
-both justified: `errors/` holds trivial one-line classes directly in the category folder, and
-**`NodelessProject` is a bare file at the root of `src/`**, because it is the surface of the
-package and not a member of any category. It does not get a folder.
+A class folder **never** sits loose in `classes/` — always inside a category. Three exceptions,
+all justified:
+
+- `errors/` holds trivial one-line classes directly in the category folder;
+- **`NodelessProject` is a bare file at the root of `src/`**, because it is the surface of the
+  package and not a member of any category;
+- **`src/plugins/` is not under `classes/`, because a plugin is not a class.** The Rollup
+  protocol binds `this` to the plugin context, so a hook cannot be a method on an instance — it
+  has to be a closure. Each plugin still gets a folder with the same `library/`, `types/` and
+  `constants/` shape, and the factory file is `<kebab>-plugin.ts` with no `.class` suffix.
 
 ## Imports
 
@@ -132,4 +147,5 @@ import { loadAsFile } from './load-as-file.js';
 `import type` always at the top, in a separate declaration, with no inline `type` specifier.
 
 **Node builtins are forbidden in `src/`**, by lint and by `tsconfig.build.json`. Allowed only in
-`__tests__/`, `example/` and config files.
+`__tests__/`, `example/` and config files. `src/classes/shims/` **implements** them; it does not
+import them.

@@ -1,13 +1,13 @@
 # Architecture
 
-Four modules, each with a contract in `src/types/` and an implementation in `src/classes/`.
+Six modules, each with a contract in `src/types/` and an implementation in `src/classes/`.
 
 ```
-types/  ← contracts: Vfs, Resolver, Bundler, Installer
+types/  ← contracts: Vfs, Resolver, Bundler, Installer, Runtime, Plugin
    ↑
-classes/vfs/  ·  classes/resolver/  ·  classes/bundler/  ·  classes/installer/
+classes/vfs/ · resolver/ · bundler/ · installer/ · runtime/ · shims/ · plugin/ · config/
    ↑
-nodeless-project.class.ts  ← the facade that stitches the four together
+nodeless-project.class.ts  ← the facade that stitches them together
 ```
 
 | Module      | What it does                                                       |
@@ -16,16 +16,32 @@ nodeless-project.class.ts  ← the facade that stitches the four together
 | `resolver`  | Node's resolution algorithm, over the VFS                          |
 | `bundler`   | esbuild-wasm plus the plugin that binds esbuild to the VFS         |
 | `installer` | npm without npm: packument, semver, tarball, hoisting, lockfile    |
+| `shims`     | Node's standard library, implemented against the VFS               |
+| `runtime`   | evaluates a module out of the VFS, with builtins already rewritten |
+| `plugin`    | the Rollup and Vite hook protocol                                  |
+| `config`    | finds the project's config file and runs it through the runtime    |
 
 ## The rule that holds everything up
 
-**No user code is ever executed.** Installing is downloading and unpacking; building is
-transforming text. There is no `eval`, no `new Function`, no dynamic import of project code, no
-running of `package.json` scripts. The isolation does not come from a sandbox — it comes from
-there being no execution.
+**There are two graphs and they get different treatment.**
 
-Corollary: `install()` **never** runs `postinstall`, and dependencies with native bindings
-(`.node`) are out of scope by construction, not for lack of time.
+- The **bundle graph** — rooted at the entry, containing the application and its dependencies —
+  is read as text and never executed. This has not changed and will not.
+- The **config graph** — rooted at `vite.config.ts`, containing the toolchain — **is executed**,
+  because a build tool that does not run is a build tool you have to reimplement.
+
+They are disjoint by construction: the entry is never reachable from the config.
+
+## The sandbox is the emulation
+
+`ModuleRuntime` bundles a module before evaluating it, and every `node:fs` in that bundle is
+resolved **by our own resolver, at bundle time**, to a shim over the VFS. When the code finally
+runs, the real builtin is not blocked — it was never in the bundle.
+
+The consequence: there is no disk to escape to, because the only filesystem that exists is a
+`Map`. What is left is `eval` and an `import()` with a computed specifier, which is documented
+risk and not an open door. `createRequire` refuses anything but a builtin for the same reason:
+answering a dynamic require with an empty module would fail later and somewhere else.
 
 ## Isomorphism is a contract, not an intention
 
@@ -35,72 +51,48 @@ enforce it:
 - `tsconfig.build.json` with `types: []` — without Node's types, `node:fs` does not compile;
 - ESLint's `no-restricted-imports`, relaxed only in `__tests__/` and `example/`.
 
-Only `fetch`, `TextEncoder`/`TextDecoder`, `btoa`/`atob` and `setTimeout` — what exists on both
-sides. Disk I/O, where it has to exist, lives in `example/` and in the tests.
+`new Function` is the evaluator for the same reason: a `Worker` is browser-only and a `data:`
+URL import is blocked by CSP in a browser. It is the least isolated of the three, and that is
+acceptable **because isolation was decided at bundle time**.
 
-## The VFS is synchronous, and that is a decision
-
-`Vfs.readFile` is synchronous because esbuild's `onResolve` needs a fast answer and the resolver
-runs thousands of times per build. An async VFS would infect the whole resolver with `await` and
-buy nothing: the content is already in memory.
-
-The consequence: a persistent cache (IndexedDB, disk) **cannot** sit behind the `Vfs` interface.
-It belongs in the installer, which is async by nature.
-
-## A build error is data, not an exception
+## A build error is data; a config error is an exception
 
 `build()` returns `BuildResult`, a union discriminated on `ok`. Syntax errors, unresolved
-imports and a missing entry point all come out in `errors: BuildMessage[]` with file, line and
-column. A caller that has to act on a failure needs the position, and an exception would lose
-it.
+imports and a missing entry all come out in `errors: BuildMessage[]` with file, line and column.
 
-Exceptions are reserved for misuse and for install failures, not for build outcomes:
-`FileNotFoundError`, `InvalidSnapshotError`, `InstallError`. `ResolveError` is thrown by the resolver
-and caught by the plugin, which converts it into a `BuildMessage`.
-
-## `build()` is pure with respect to the VFS
-
-The result comes back in memory and is **not** written to `/dist`. If it were, every build would
-fire `watch`, which would fire another build. Anyone who wants the dist in the VFS writes it
-themselves.
-
-## What each folder holds
-
-| Folder                   | What it is                                              |
-| ------------------------ | ------------------------------------------------------- |
-| `types/`                 | the package contracts and the shapes crossing the API   |
-| `constants/`             | constants used by more than one folder                  |
-| `errors/`                | `NodelessError` and its subclasses                      |
-| `library/`               | ownerless pure functions: POSIX paths, base64, encoding |
-| `classes/vfs/`           | `MemoryVfs`                                             |
-| `classes/resolver/`      | `NodeResolver` and the algorithm under `library/`       |
-| `classes/bundler/`       | `EsbuildBundler` and the `nodeless-vfs` plugin          |
-| `classes/installer/`     | `RegistryInstaller` and the in-memory package cache     |
-| `nodeless-project.class` | the facade; the only loose class at the root            |
+A config that throws is different: it is misuse of the toolchain, not an outcome of the build,
+and it comes out as `RuntimeError` naming the module with the original error as its `cause`.
+`FileNotFoundError`, `InvalidSnapshotError` and `InstallError` are the same category.
+`ResolveError` is thrown by the resolver and converted by the bundler plugin into a
+`BuildMessage`.
 
 ## Maintenance rules
 
 - **Every VFS path is POSIX and absolute.** Once it comes in, it has been through
-  `normalizePath`. No relative path is ever stored.
+  `normalizePath`. No relative path is ever stored. **The shims are the exception by design**:
+  `node:path` implements Node's semantics, where a relative path stays relative and
+  `dirname('a.ts')` is `.`. That is why `posix-*` exists next to `src/library/`'s helpers.
+- **A new Node builtin goes in `NodeShims`, not in a special case elsewhere.** That is the
+  whole bet. If a toolchain fails for want of `node:zlib`, the fix is one shim, once.
+- **A builtin that implies a process imports fine and throws when called.** A dead code path
+  reaching for `child_process` must not take a build down.
 - **The resolver does not watch the VFS.** It caches `package.json` per directory, which is why
-  `invalidate()` is called at the start of every `build()`. Installing a dependency after the
-  first build has to keep working — there is a test.
+  `invalidate()` is called at the start of every `build()`.
 - **A package with `exports` is sealed.** An unmapped subpath does not exist and does **not**
-  fall back to `main`. That is how Node and esbuild behave; loosening it hides the package's bug.
-- **A Node builtin becomes an empty module with a warning**, never an error. A dependency that
-  imports `fs` on a dead code path must not take the user's build down.
-- **A new `exports` condition** goes into `DEFAULT_CONDITIONS`, in order. `browser` comes before
-  `import` because the target is the browser.
-- **Public surface**: `NodelessProject` is the **only runtime export**. The class is how the
-  library is used — no factory function, no second entry point, no implementation class offered
-  as an alternative. Types are free to be exported when they are part of the contract; they are
-  erased at build time and cost nothing.
-- **`src/index.ts` never uses `export *`.** Every name is listed, so adding to the surface is a
-  decision and not a side effect of dropping a file into a folder.
-- **A package installs, it never runs.** No `postinstall`, no `prepare`, no lifecycle script.
-  The day one has to run, the premise of the library has broken.
-- **Placement during install is synchronous.** Fetching is parallel; deciding where a package
-  lands is not, or two dependents race for the root `node_modules`.
-- **Runtime dependencies are expensive.** There are four today: `esbuild-wasm`,
-  `resolve.exports`, `semver` and `fflate`. Each one has to work in the browser with no shim.
-  Before adding a fifth, ask whether you could just write it.
+  fall back to `main`.
+- **Conditions differ between the graphs.** `DEFAULT_CONDITIONS` puts `browser` first, because
+  the bundle targets a browser. `RUNTIME_CONDITIONS` puts `node` first, because a plugin's
+  `browser` entry is a stub meant for the app it builds, not for itself.
+- **Built-in plugins run last.** `tailwindPlugin` and `sassPlugin` are `enforce: 'post'` so that
+  a config bringing `@tailwindcss/vite` leaves them nothing to claim.
+- **The config is resolved once per mode.** A watch rebuild reuses the plugin instances; editing
+  the config file invalidates it, which is why Vite restarts on one.
+- **The bundler is built on the first build, not in the constructor.** The resolver needs the
+  config's aliases, and reading a config means running one, which cannot happen synchronously.
+- **Public surface**: `NodelessProject` is the only class exported, plus `tailwindPlugin` and
+  `sassPlugin` as functions. Types ship when they are part of the contract.
+- **`src/index.ts` never uses `export *`.** Every name is listed.
+- **A package installs, it never runs.** No `postinstall`, no `prepare`. Installing is
+  downloading and unpacking; the toolchain runs at build time, from what was unpacked.
+- **Runtime dependencies are expensive.** There are four: `esbuild-wasm`, `resolve.exports`,
+  `semver` and `fflate`. Each has to work in the browser with no shim.

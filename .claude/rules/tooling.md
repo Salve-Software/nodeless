@@ -13,6 +13,7 @@
 | `npm run example`                 | builds `example/app` in Node, offline                 |
 | `npm run example:install`         | installs from the real registry and builds the result |
 | `npm run example:tailwind`        | builds a Tailwind v4 project with no configuration    |
+| `npm run example:vite`            | runs a project's own `vite.config.ts` and its plugins |
 | `npm run playground`              | opens the editor-and-preview page in your browser     |
 | `npm run example:browser:test`    | drives that page headless and asserts it really works |
 
@@ -28,6 +29,10 @@ the artifact published there.
 
 The second guard is ESLint's `no-restricted-imports`, relaxed only in `__tests__/`, `example/`
 and `*.config.ts`.
+
+**The example projects are excluded from both.** `example/app`, `example/vite` and the rest are
+_input_ to the library — they are built by nodeless, not compiled by tsc — so they are in
+`tsconfig.json`'s `exclude` and ESLint's `ignores`. A `.ts` file in one of them is a fixture.
 
 **Two options that change how the code gets written:**
 
@@ -84,6 +89,10 @@ width are adjusted **in `.prettierrc.json`**, never in ESLint.
 The rules that back the structure rules: `max-params: 2`, `member-ordering`,
 `consistent-type-imports`, `import-x/order` with the `type` group on top, `../` banned by regex,
 and `no-restricted-imports` over Node builtins.
+
+Two documented relaxations: `max-params` is off under `src/classes/shims/`, which mirrors Node's
+signatures, and `no-implied-eval` is disabled on the single `new Function` line in
+`evaluate-module.ts`.
 
 ## Husky
 

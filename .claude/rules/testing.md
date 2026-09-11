@@ -49,6 +49,19 @@ the suite breaks, and `npm run example` in CI breaks with it.
 It is also what gives the test real value — it is the actual React 19, with `exports`, the
 `react-dom/client` subpath and `react/jsx-runtime`, not a complacent stub.
 
+## What must always be covered for the two graphs
+
+- **A config-declared plugin reaches the app graph.** `src/__tests__/vite-config.test.ts` is the
+  end-to-end proof: a plugin written inline in the config, a plugin imported from
+  `node_modules` as CommonJS, a virtual module, `define`, both spellings of `resolve.alias`,
+  and `defineConfig` as a sync and an async function.
+- **CommonJS interop.** A CJS dependency requiring another one, a named export off `exports.x`,
+  and a dual package taking its `node` condition. These are the cases that decide whether the
+  runtime is viable at all, so they are tested directly rather than implied.
+- **The sandbox boundary.** A config calling `existsSync('/etc/passwd')` gets `false` and
+  `existsSync('/project/config.js')` gets `true`, in the same assertion.
+- **`__dirname` and `import.meta.url`**, because an iife bundle provides neither.
+
 ## What must always be covered
 
 - **Structured errors.** Broken syntax, a nonexistent import and a missing entry all return
