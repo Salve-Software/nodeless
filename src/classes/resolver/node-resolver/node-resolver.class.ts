@@ -6,6 +6,7 @@ import type {
 import type { ResolveRequest, ResolveResult, Resolver } from '@/types/index.js';
 import { DEFAULT_CONDITIONS } from '@/constants/index.js';
 import { normalizePath } from '@/library/index.js';
+import { RESOLVE_EXTENSIONS } from './constants/index.js';
 import { readManifest, resolveSpecifier } from './library/index.js';
 
 /** Node resolution over the VFS, caching `package.json` per directory. */
@@ -17,6 +18,7 @@ export class NodeResolver implements Resolver {
     this.scope = {
       vfs,
       conditions,
+      extensions: RESOLVE_EXTENSIONS,
       readManifest: (dir) => this.manifestOf(dir),
     };
   }

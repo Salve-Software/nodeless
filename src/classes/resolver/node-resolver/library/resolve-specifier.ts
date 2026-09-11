@@ -15,12 +15,14 @@ import { loadAsDirectory } from './load-as-directory.js';
 import { loadAsFile } from './load-as-file.js';
 import { nodeModulesDirs } from './node-modules-dirs.js';
 import { resolveInPackage } from './resolve-in-package.js';
+import { scopeForImporter } from './scope-for-importer.js';
 
 /** Node's resolution algorithm over the VFS. Synchronous, because the VFS is. */
 export function resolveSpecifier(
-  scope: ResolveScope,
+  outerScope: ResolveScope,
   { specifier, importer }: ResolveRequest,
 ): ResolveResult {
+  const scope = scopeForImporter(outerScope, importer);
   const fromDir = importer === '' ? ROOT_PATH : dirname(importer);
 
   if (isRelativeSpecifier(specifier) || specifier.startsWith('/')) {

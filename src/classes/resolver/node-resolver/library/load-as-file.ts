@@ -1,14 +1,11 @@
 import type { ResolveScope } from '@/classes/resolver/node-resolver/types/index.js';
-import {
-  RESOLVE_EXTENSIONS,
-  TYPESCRIPT_REWRITES,
-} from '@/classes/resolver/node-resolver/constants/index.js';
+import { TYPESCRIPT_REWRITES } from '@/classes/resolver/node-resolver/constants/index.js';
 import { extname } from '@/library/index.js';
 
 export function loadAsFile(scope: ResolveScope, path: string): string | undefined {
   if (scope.vfs.stat(path)?.type === 'file') return path;
 
-  for (const extension of RESOLVE_EXTENSIONS) {
+  for (const extension of scope.extensions) {
     const candidate = `${path}${extension}`;
 
     if (scope.vfs.stat(candidate)?.type === 'file') return candidate;

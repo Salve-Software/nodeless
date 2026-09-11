@@ -12,3 +12,4 @@ export * from './resolve-exports-subpath.js';
 export * from './resolve-in-package.js';
 export * from './resolve-legacy-entry.js';
 export * from './resolve-specifier.js';
+export * from './scope-for-importer.js';

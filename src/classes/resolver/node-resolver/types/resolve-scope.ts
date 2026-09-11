@@ -5,5 +5,6 @@ import type { Vfs } from '@/types/index.js';
 export interface ResolveScope {
   vfs: Vfs;
   conditions: string[];
+  extensions: string[];
   readManifest(dir: string): PackageManifest | undefined;
 }
