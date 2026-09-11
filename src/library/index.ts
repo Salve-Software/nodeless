@@ -11,4 +11,5 @@ export * from './normalize-path.js';
 export * from './parse-specifier.js';
 export * from './text-to-bytes.js';
 export * from './to-bytes.js';
+export * from './try-resolve.js';
 export * from './unwrap-esbuild.js';

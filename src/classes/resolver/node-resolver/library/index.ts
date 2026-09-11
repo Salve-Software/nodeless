@@ -14,5 +14,6 @@ export * from './resolve-in-package.js';
 export * from './resolve-legacy-entry.js';
 export * from './resolve-specifier.js';
 export * from './resolve-tsconfig-path.js';
-export * from './strip-json-comments.js';
 export * from './scope-for-importer.js';
+export * from './strip-json-comments.js';
+export * from './to-alias-mappings.js';

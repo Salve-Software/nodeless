@@ -8,15 +8,26 @@ import type { ResolveRequest, ResolveResult, Resolver } from '@/types/index.js';
 import { DEFAULT_CONDITIONS } from '@/constants/index.js';
 import { normalizePath } from '@/library/index.js';
 import { RESOLVE_EXTENSIONS } from './constants/index.js';
-import { readManifest, readTsconfigPaths, resolveSpecifier } from './library/index.js';
+import {
+  readManifest,
+  readTsconfigPaths,
+  resolveSpecifier,
+  toAliasMappings,
+} from './library/index.js';
 
 /** Node resolution over the VFS, caching `package.json` per directory. */
 export class NodeResolver implements Resolver {
   private readonly manifests = new Map<string, PackageManifest | undefined>();
+  private readonly aliases: PathMapping[];
   private paths: PathMapping[] | undefined;
   private readonly scope: ResolveScope;
 
-  constructor({ vfs, conditions = DEFAULT_CONDITIONS }: NodeResolverOptions) {
+  constructor({
+    vfs,
+    conditions = DEFAULT_CONDITIONS,
+    aliases = [],
+  }: NodeResolverOptions) {
+    this.aliases = toAliasMappings(aliases);
     this.scope = {
       vfs,
       conditions,
@@ -27,7 +38,7 @@ export class NodeResolver implements Resolver {
   }
 
   resolve(request: ResolveRequest): ResolveResult {
-    this.paths ??= readTsconfigPaths(this.scope.vfs);
+    this.paths ??= [...this.aliases, ...readTsconfigPaths(this.scope.vfs)];
     this.scope.paths = this.paths;
 
     return resolveSpecifier(this.scope, request);
