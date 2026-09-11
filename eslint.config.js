@@ -118,6 +118,13 @@ export default config(
   },
 
   {
+    // The shims mirror Node's own signatures. `Buffer.toString(encoding, start, end)` is
+    // three parameters because that is what the toolchain calls.
+    files: ['src/classes/shims/**/*.ts'],
+    rules: { 'max-params': 'off' },
+  },
+
+  {
     files: ['src/**/__tests__/**/*.ts', 'example/**/*.ts', '*.config.ts'],
     rules: {
       'no-restricted-imports': 'off',
