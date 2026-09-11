@@ -2,7 +2,7 @@
   "name": "@salve-software/nodeless",
   "version": "0.0.0-development",
   "type": "module",
-  "description": "Installs npm dependencies and builds a React project without Node, without a shell and without a VM. Same code in Node and in the browser.",
+  "description": "npm install and a React build, without Node. The same code in a server and in the browser: no shell, no filesystem, no VM.",
   "license": "MIT",
   "sideEffects": false,
   "main": "./dist/index.js",
@@ -25,12 +25,17 @@
   "keywords": [
     "bundler",
     "esbuild",
-    "in-memory",
-    "virtual-filesystem",
+    "esbuild-wasm",
     "browser",
-    "isomorphic",
+    "browser-build",
     "npm-install",
-    "react"
+    "package-manager",
+    "virtual-filesystem",
+    "vfs",
+    "playground",
+    "live-preview",
+    "react",
+    "typescript"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
