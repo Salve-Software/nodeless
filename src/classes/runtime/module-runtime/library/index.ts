@@ -1,2 +1,6 @@
+export * from './create-runtime-plugin.js';
+export * from './create-shim-module.js';
 export * from './inject-module-globals.js';
+export * from './load-runtime-file.js';
 export * from './replace-import-meta-url.js';
+export * from './runtime-loader-for.js';
