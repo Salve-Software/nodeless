@@ -107,12 +107,30 @@ installs from the registry over CORS, builds, and that the **iframe really execu
 React mounts, state updates on click, an edit rebuilds, and a syntax error comes back as a
 diagnostic. It is the only proof that the browser half of "isomorphic" is real.
 
-**`release`** runs **only on a push to `main`**, depends on both jobs, and fires semantic-release.
+Nothing in `ci.yml` publishes. Releasing is its own workflow, and it is manual.
 
-## Semantic release
+## Releasing
 
-Versions the package from conventional commits and **publishes to npm**
-(`@salve-software/nodeless`, public scope). It needs `NPM_TOKEN` in the repository secrets.
+`.github/workflows/release.yml`, **`workflow_dispatch` only**. Merging to `main` never publishes;
+someone decides to. It takes a `dry-run` input that works out the next version and stops.
+
+It re-runs lint, typecheck, format, test and build before releasing. CI already ran on the
+commit, but a dispatch can target any ref, and shipping something unverified is the one mistake
+that reaches other people.
+
+### There is no npm token
+
+Publishing goes through **npm trusted publishing**: the workflow asks GitHub for an OIDC token
+and npm exchanges it for a short-lived credential. `id-token: write` is what makes that possible,
+and it is the whole configuration on this side. Provenance comes along for free.
+
+Two things have to line up, and both live on npmjs.com rather than here:
+
+- the package has a trusted publisher configured for this repository **and the workflow filename
+  `release.yml`** — renaming the file breaks publishing;
+- npm CLI **11.5.1 or newer**, which is why the workflow upgrades npm. Node 22 ships npm 10.
+
+### Versions come from the commits
 
 | Commit                               | Effect |
 | ------------------------------------ | ------ |

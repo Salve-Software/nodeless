@@ -227,6 +227,7 @@ npm run example         # builds example/app in Node, offline
 npm run example:install # installs from the real registry and builds the result
 npm run example:tailwind # builds a tailwind v3 project through the css transform
 npm run playground      # opens the editor-and-preview page in your browser
+npm run example:browser:test # drives that page headless and asserts it works
 ```
 
 | Where                                   | What                                     |
