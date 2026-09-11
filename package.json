@@ -69,9 +69,13 @@
     "semver": "^7.8.5"
   },
   "peerDependencies": {
+    "sass": "^1.80.0",
     "tailwindcss": "^4.0.0"
   },
   "peerDependenciesMeta": {
+    "sass": {
+      "optional": true
+    },
     "tailwindcss": {
       "optional": true
     }
@@ -94,6 +98,7 @@
     "prettier": "^3.9.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "sass": "^1.104.0",
     "semantic-release": "^25.0.9",
     "tailwindcss": "^4.3.3",
     "tsc-alias": "^1.9.2",
