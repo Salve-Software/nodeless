@@ -12,10 +12,7 @@ import { pickVersion } from './pick-version.js';
 import { planInstallDir } from './plan-install-dir.js';
 import { writePackage } from './write-package.js';
 
-/**
- * Breadth-first, one level per round trip: every package in a level is fetched in parallel,
- * then placed. Placement is synchronous so two dependents cannot both claim the root.
- */
+/** Breadth first, one round trip per level. Placement is sync so dependents cannot race. */
 export async function walkDependencies(
   scope: InstallScope,
   roots: InstallRequest[],

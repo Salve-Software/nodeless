@@ -74,10 +74,7 @@ export function resolveSpecifier(
   throw unresolved({ specifier: wanted, importer });
 }
 
-/**
- * Lives here rather than in its own `library/` file because it calls `resolveSpecifier`
- * back — a separate file would create a circular import between two `library/` modules.
- */
+/** Lives here because it calls `resolveSpecifier` back; a separate file would be circular. */
 function overrideFile(scope: ResolveScope, path: string): ResolveResult {
   const owner = findPackageScope(scope, dirname(path));
   const mapping = owner ? applyBrowserRedirect(scope, { owner, path }) : undefined;

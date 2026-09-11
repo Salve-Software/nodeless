@@ -4,10 +4,7 @@ import type {
 } from '@/classes/resolver/node-resolver/types/index.js';
 import { exports as resolveExportsField } from 'resolve.exports';
 
-/**
- * An unexported subpath returns an empty list instead of throwing: whether that becomes
- * an error is up to `resolveSpecifier`, which still has other `node_modules` to try.
- */
+/** An unexported subpath gives an empty list; `resolveSpecifier` decides if that is an error. */
 export function resolveExportsSubpath(
   scope: ResolveScope,
   { manifest, subpath }: { manifest: PackageManifest; subpath: string },

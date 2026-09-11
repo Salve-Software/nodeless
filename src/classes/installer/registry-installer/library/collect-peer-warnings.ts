@@ -1,11 +1,7 @@
 import type { InstalledPackage } from '@/classes/installer/registry-installer/types/index.js';
 import { satisfies } from 'semver';
 
-/**
- * Peer dependencies are reported, never installed. An optional peer is not reported
- * either — `@types/react` is optional on every Radix package, and warning about it
- * would bury the peers that actually matter.
- */
+/** Reported, never installed. A peer the package marks optional is not even reported. */
 export function collectPeerWarnings(installed: InstalledPackage[]): string[] {
   const versions = new Map(installed.map((entry) => [entry.name, entry.version]));
   const warnings: string[] = [];

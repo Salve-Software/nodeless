@@ -4,10 +4,7 @@ import { NODE_MODULES_DIR } from '@/classes/installer/registry-installer/constan
 import { ROOT_PATH } from '@/constants/index.js';
 import { joinPath } from '@/library/index.js';
 
-/**
- * Flat like npm: everything goes to the root `node_modules`. A version that clashes with
- * what is already there nests under its own dependent instead.
- */
+/** Flat like npm: a version clashing with the root copy nests under its own dependent. */
 export function planInstallDir(
   rootVersions: Map<string, string>,
   { request, version }: { request: InstallRequest; version: string },

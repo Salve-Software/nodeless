@@ -107,10 +107,7 @@ export class EsbuildBundler implements Bundler {
     }
   }
 
-  /**
-   * Drops the resolution cache. **Does not stop esbuild**: the WASM instance is one per
-   * process and shared — call `esbuild.stop()` yourself if you want it torn down.
-   */
+  /** Drops the resolution cache. Does not stop esbuild: the WASM instance is process-wide. */
   async dispose(): Promise<void> {
     this.resolver.invalidate?.();
   }
