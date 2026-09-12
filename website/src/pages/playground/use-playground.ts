@@ -35,10 +35,8 @@ export function usePlayground(): PlaygroundState & {
 
   const build = useCallback(async () => {
     const current = project.current;
-
     if (!current) return;
 
-    // An edit can land while a build is still running, and the older one must not win the race.
     const id = ++run.current;
 
     setState((previous) => ({ ...previous, phase: 'building' }));
@@ -78,7 +76,6 @@ export function usePlayground(): PlaygroundState & {
     const created = new NodelessProject({
       files: STARTER,
       wasmURL: WASM_URL,
-      // The config in the editor is whatever the visitor typed, so it runs off the page.
       isolation: 'worker',
       workerUrl: `${window.location.origin}${base}/runtime-worker.js`,
     });
@@ -87,9 +84,6 @@ export function usePlayground(): PlaygroundState & {
 
     void (async () => {
       const installed = await created.install();
-
-      // StrictMode mounts twice, so this can resolve after its own project was thrown away.
-      // Building then reaches project.current, which is the replacement, mid-install.
       if (disposed) return;
 
       setState((previous) => ({
