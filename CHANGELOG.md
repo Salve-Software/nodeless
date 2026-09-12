@@ -1,3 +1,24 @@
+# [0.3.0](https://github.com/Salve-Software/nodeless/compare/v0.2.0...v0.3.0) (2026-09-12)
+
+
+### Bug Fixes
+
+* **deps:** bump esbuild-wasm from 0.25.12 to 0.28.2 ([2d468ec](https://github.com/Salve-Software/nodeless/commit/2d468ece2d833126560ceff6b5f52cf1974d624c))
+* **deps:** bump the esbuild-wasm version everywhere it is spelled out ([249fa3c](https://github.com/Salve-Software/nodeless/commit/249fa3ced88c4adeeebce1ef145b52291aca8dfe))
+* **website:** do not build the playground mid-install ([1e37573](https://github.com/Salve-Software/nodeless/commit/1e375739c048568a776872a0b9340919da12de90))
+* **website:** reveal the cards grid, not the cards ([00559c4](https://github.com/Salve-Software/nodeless/commit/00559c49ee250dff2be216c77795971acb67920e))
+
+
+### Features
+
+* **brand:** add the social banner and the salve lockup ([4cd4ef3](https://github.com/Salve-Software/nodeless/commit/4cd4ef314c6f48bd6a8c58c28e06ad7be171f381))
+* **brand:** adopt the dashed ring mark ([aeb4d64](https://github.com/Salve-Software/nodeless/commit/aeb4d645595101f414add63c9b9db1ad6f37e162))
+* **brand:** redraw the lockup around the ring ([b4317de](https://github.com/Salve-Software/nodeless/commit/b4317deb9f10cc2398527d8bd354268b52ad4586)), closes [#a3e635](https://github.com/Salve-Software/nodeless/issues/a3e635) [#4f9a1e](https://github.com/Salve-Software/nodeless/issues/4f9a1e)
+* **website:** animate the playground status badge ([68823ae](https://github.com/Salve-Software/nodeless/commit/68823ae5e20a79401fcc255133a54c4e49660782))
+* **website:** draw the ring in the nav brand ([e8009c7](https://github.com/Salve-Software/nodeless/commit/e8009c7c086a44a7870ff6758b63f7919b8cd117))
+* **website:** regenerate the favicons from the ring ([6005029](https://github.com/Salve-Software/nodeless/commit/6005029b6291195d5414388b64e789192b07ffb0))
+* **website:** use the banner as the social card ([d936de3](https://github.com/Salve-Software/nodeless/commit/d936de35319b250c31753fa8eb8b96b8d9ab31b6))
+
 # [0.2.0](https://github.com/Salve-Software/nodeless/compare/v0.1.0...v0.2.0) (2026-09-12)
 
 
