@@ -1,12 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo/nodeless-lockup-dark.svg">
-    <img src="./assets/logo/nodeless-lockup-light.svg" alt="nodeless" width="210">
-  </picture>
-</p>
-
-<p align="center">
-  <strong>npm install and a frontend build, in-process</strong>
+  <img src="./assets/logo/banner-nodeless@2x.png" alt="nodeless: npm install and a frontend build, in-process. The same code runs in the browser and on a server. No shell, no filesystem, no VM." width="880">
 </p>
 
 <p align="center">

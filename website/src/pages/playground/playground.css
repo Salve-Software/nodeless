@@ -30,47 +30,6 @@
   color: var(--text-dim);
 }
 
-.pg__status {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.28rem 0.75rem;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.pg__status i {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: var(--text-dim);
-}
-
-.pg__status[data-phase='ready'] {
-  color: var(--accent);
-  border-color: color-mix(in oklab, var(--accent) 30%, transparent);
-}
-
-.pg__status[data-phase='ready'] i {
-  background: var(--accent);
-}
-
-.pg__status[data-phase='failed'] {
-  color: #f87171;
-  border-color: color-mix(in oklab, #f87171 32%, transparent);
-}
-
-.pg__status[data-phase='failed'] i {
-  background: #f87171;
-}
-
-.pg__status[data-phase='installing'] i,
-.pg__status[data-phase='building'] i {
-  background: var(--warn);
-  animation: pulse-ring 1.6s infinite;
-}
-
 .pg__panes {
   display: grid;
   gap: 1px;

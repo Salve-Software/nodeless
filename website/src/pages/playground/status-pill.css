@@ -1,0 +1,197 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.28rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  transition:
+    color 0.35s var(--ease),
+    border-color 0.35s var(--ease),
+    background 0.35s var(--ease);
+}
+
+.pill__dot {
+  position: relative;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  flex: none;
+  background: currentColor;
+}
+
+/* Both labels are laid out side by side, so the pill's width is their sum while they cross. */
+.pill__swap {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.pill__slot {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.pill__slot > span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.pill__slot[data-dir='in'] {
+  animation: pill-in 0.46s var(--ease) both;
+}
+
+.pill__slot[data-dir='out'] {
+  animation: pill-out 0.4s var(--ease-soft) both;
+}
+
+/*
+ * The blur peaks exactly where the opacity bottoms out, so the halo never survives long enough
+ * to be seen crossing the pill's border. 0fr collapses the track, which is what moves the width.
+ */
+@keyframes pill-in {
+  from {
+    grid-template-columns: 0fr;
+    opacity: 0;
+    filter: blur(7px);
+    transform: translateY(0.42em) scale(0.94);
+  }
+  55% {
+    opacity: 1;
+  }
+  to {
+    grid-template-columns: 1fr;
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+@keyframes pill-out {
+  from {
+    grid-template-columns: 1fr;
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+  45% {
+    opacity: 0;
+  }
+  to {
+    grid-template-columns: 0fr;
+    opacity: 0;
+    filter: blur(7px);
+    transform: translateY(-0.42em) scale(1.06);
+  }
+}
+
+.pill[data-phase='installing'],
+.pill[data-phase='building'] {
+  color: var(--warn);
+  border-color: color-mix(in oklab, var(--warn) 30%, transparent);
+}
+
+.pill[data-phase='installing'] .pill__dot,
+.pill[data-phase='building'] .pill__dot {
+  animation: pill-working 1.6s var(--ease-soft) infinite;
+}
+
+.pill[data-phase='ready'] {
+  color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 30%, transparent);
+}
+
+.pill[data-phase='failed'] {
+  color: #f87171;
+  border-color: color-mix(in oklab, #f87171 32%, transparent);
+}
+
+/* The dot lands rather than appears: the pill has been pulsing and this is the stop. */
+.pill[data-phase='ready'] .pill__dot {
+  animation: pill-land 0.55s var(--ease);
+}
+
+.pill[data-phase='failed'] .pill__dot {
+  animation: pill-knock 0.4s var(--ease-soft);
+}
+
+/* A halo under the dot, blurred so the pulse has no edge to it. */
+.pill__dot::after {
+  content: '';
+  position: absolute;
+  inset: -0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  filter: blur(6px);
+  opacity: 0;
+}
+
+.pill[data-phase='installing'] .pill__dot::after,
+.pill[data-phase='building'] .pill__dot::after {
+  animation: pill-halo 1.6s var(--ease-soft) infinite;
+}
+
+.pill[data-phase='ready'] .pill__dot::after {
+  animation: pill-flare 0.6s var(--ease);
+}
+
+@keyframes pill-working {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(0.72);
+  }
+}
+
+@keyframes pill-halo {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  40% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+}
+
+@keyframes pill-land {
+  0% {
+    transform: scale(0.3);
+  }
+  55% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pill-flare {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+
+@keyframes pill-knock {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-0.16rem);
+  }
+  60% {
+    transform: translateX(0.16rem);
+  }
+}
