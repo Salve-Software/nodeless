@@ -1,5 +1,5 @@
 import type { WorkerRequest, WorkerScope } from '@/classes/runtime/index.js';
-import { sealGlobals, WorkerHandler } from '@/classes/runtime/index.js';
+import { sealGlobals, sealProcess, WorkerHandler } from '@/classes/runtime/index.js';
 
 /**
  * The worker entry, and the second thing this package exports. It is published bundled and
@@ -8,6 +8,7 @@ import { sealGlobals, WorkerHandler } from '@/classes/runtime/index.js';
  */
 export function startRuntimeWorker(scope: WorkerScope = globalThis): void {
   sealGlobals(globalThis);
+  sealProcess(globalThis);
 
   const handler = new WorkerHandler();
 
