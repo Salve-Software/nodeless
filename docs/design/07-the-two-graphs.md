@@ -124,8 +124,26 @@ rather than a copy of yours.
 
 Two things narrow the gap even without a second realm, and they apply on both sides:
 `process` and `require` are **shadowed as parameters** of the evaluated function, so a bare
-reference resolves to the shim. `globalThis` cannot be shadowed that way, which is the whole
-reason the second mode exists.
+reference resolves to the shim.
+
+That is where shadowing stops being useful. `globalThis` is shadowable too — it is not a
+keyword — and it would buy nothing, because this walks around every shadow there is:
+
+```js
+Function('return this')();
+```
+
+The `Function` constructor always closes over the global scope, and so does indirect `eval`,
+and so does `({}).constructor.constructor`. Same-realm isolation of JavaScript is not a thing
+you achieve by hiding names; it is why SES exists and why SES has to freeze every intrinsic in
+the realm to get there. **A separate realm is the only answer that is not a speed bump.**
+
+A worker thread is one: a V8 isolate with its own heap and its own globals. What it is _not_,
+out of the box, is free of Node — `Function('return this')().process` is the real process
+object, and `process.binding('fs')` and `process.binding('spawn_sync')` hand back native
+modules. Those members are deleted before the handler takes its first message; the list is
+surgical, because Node's internals use `nextTick` and `emitWarning` and taking those would
+break the worker rather than seal it.
 
 The default stays in-process because that half is the isomorphic one, and because a project
 with no config file evaluates nothing at all — there is nothing to isolate.

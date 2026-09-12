@@ -82,6 +82,9 @@ evaluated off the page.
 - **Running real `vite build`.** Out of scope: it wants `worker_threads`, a server, and native
   rollup. Being _compatible with_ Vite plugins is what buys the coverage.
 - **React Refresh.** Still a deliberate no — a rebuild plus an iframe reload costs ~200 ms.
+- **`isolation: 'none'` is not a sandbox and is not sold as one.** `Function('return this')()`
+  reaches the host's realm, and no amount of shadowing changes that. It means "run this config
+  in my process" — safe for a config you wrote, unsafe for one you did not.
 - **`process.cwd()` in a Node worker** still reports the host's directory: a worker thread
   shares it with the process that spawned it. Path disclosure, not secrets.
 

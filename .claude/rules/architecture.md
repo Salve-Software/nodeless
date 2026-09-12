@@ -58,7 +58,10 @@ that is acceptable **because isolation was decided at bundle time**.
 **`process` and `require` are shadowed as parameters of the evaluated function**, so a bare
 reference inside a config resolves to the shim and not the host's. Without that, `process.env`
 in a config is the environment of whatever is running the build — on a server, your secrets.
-`globalThis` is not shadowable, and closing that is what the second mode is for.
+Shadowing stops there, and it is worth being precise about why: `Function('return this')()`
+reaches the realm's global whatever you shadowed, and so does indirect `eval`. **Same-realm
+isolation is not achievable by hiding names.** `isolation: 'worker'` is a separate realm, and
+`sealProcess` removes the native bindings that realm still had.
 
 `WorkerRuntime` is the hardened one, behind the same port. It bundles identically and evaluates
 in a Worker, which costs a channel: structured clone carries no functions, so a plugin crosses
