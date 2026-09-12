@@ -1,0 +1,8 @@
+code.rich {
+  padding: 0.1em 0.4em;
+  border-radius: 5px;
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 20%, transparent);
+  color: color-mix(in oklab, var(--accent) 82%, var(--text));
+  white-space: nowrap;
+}

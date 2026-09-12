@@ -1,0 +1,69 @@
+.code {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.code__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-3);
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid rgb(255 255 255 / 6%);
+  background: rgb(255 255 255 / 2%);
+}
+
+.code__dots {
+  display: inline-flex;
+  gap: 0.4rem;
+}
+
+.code__dots i {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 12%);
+}
+
+.code__file {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: #7b8699;
+}
+
+.code__body {
+  margin: 0;
+  padding: 1.2rem 1.35rem 1.45rem;
+  overflow-x: auto;
+  line-height: 1.72;
+  color: #d7dce7;
+  tab-size: 2;
+}
+
+.tok--comment {
+  color: #55617a;
+  font-style: italic;
+}
+.tok--string {
+  color: #e8b979;
+}
+.tok--keyword {
+  color: #c58af9;
+}
+.tok--literal {
+  color: #79b8ff;
+}
+.tok--number {
+  color: #79b8ff;
+}
+.tok--call {
+  color: #8ce04a;
+}
+.tok--type {
+  color: #6ad0f0;
+}
+.tok--punct {
+  color: #78859b;
+}

@@ -1,0 +1,47 @@
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.brand__mark {
+  width: 1.75rem;
+  height: 1.75rem;
+  overflow: visible;
+}
+
+.brand__plate {
+  fill: var(--surface);
+  stroke: var(--border);
+}
+
+.brand__edge {
+  stroke: var(--accent);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 18;
+  stroke-dashoffset: 18;
+  animation: draw 1.1s var(--ease) 0.25s forwards;
+}
+
+.brand__node {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: rise 0.5s var(--ease) backwards;
+}
+
+.brand__node--a {
+  fill: var(--accent);
+  animation-delay: 0.1s;
+}
+
+.brand__node--b {
+  fill: var(--info);
+  animation-delay: 1.1s;
+}
+
+.brand__word {
+  font-weight: 700;
+  font-size: 1.06rem;
+  letter-spacing: -0.03em;
+}
