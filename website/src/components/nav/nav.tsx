@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Brand } from '@/components/brand/brand';
+import { Link } from '@/router/link';
 import { useCopy } from '@/i18n/use-copy';
 import { useTheme } from '@/hooks/use-theme';
-import { REPO_URL, NPM_URL, DOCS_URL } from '@/data/links';
+import { NPM_URL, REPO_URL } from '@/data/links';
+import type { Route } from '@/router/use-route';
 import './nav.css';
 
-export function Nav() {
+export function Nav({ route, go }: { route: Route; go: (to: Route) => void }) {
   const { copy, lang, setLang } = useCopy();
   const { theme, toggle } = useTheme();
   const [stuck, setStuck] = useState(false);
@@ -22,14 +24,23 @@ export function Nav() {
   return (
     <header className="nav" data-stuck={stuck}>
       <div className="nav__inner shell">
-        <a className="nav__brand" href="#top">
+        <Link to="/" go={go} className="nav__brand">
           <Brand />
-        </a>
+        </Link>
 
         <nav className="nav__links">
-          <a href={DOCS_URL}>{copy.nav.docs}</a>
-          <a href={REPO_URL}>{copy.nav.github}</a>
-          <a href={NPM_URL}>{copy.nav.npm}</a>
+          <Link to="/" go={go}>
+            <span data-on={route === '/'}>{copy.nav.home}</span>
+          </Link>
+          <Link to="/docs" go={go}>
+            <span data-on={route === '/docs'}>{copy.nav.docs}</span>
+          </Link>
+          <a href={REPO_URL}>
+            <span>{copy.nav.github}</span>
+          </a>
+          <a href={NPM_URL}>
+            <span>{copy.nav.npm}</span>
+          </a>
         </nav>
 
         <div className="nav__tools">

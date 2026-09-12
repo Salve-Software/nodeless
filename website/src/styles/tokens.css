@@ -30,7 +30,7 @@
   --gap-5: 3.25rem;
   --gap-6: 4.5rem;
   --gap-7: 7rem;
-  --section-pad: clamp(3.25rem, 6vw, 5.25rem);
+  --section-pad: clamp(2.75rem, 4.5vw, 4.25rem);
 
   --radius-sm: 0.5rem;
   --radius: 0.875rem;

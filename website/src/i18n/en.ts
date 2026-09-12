@@ -1,97 +1,129 @@
 export const en = {
   nav: {
+    home: 'Home',
     docs: 'Docs',
     github: 'GitHub',
     npm: 'npm',
     theme: 'Toggle theme',
     language: 'Change language',
   },
-  hero: {
-    badge: 'v0.2 — runs the project’s own Vite config',
-    title: ['Build a frontend project.', 'Without Node.'],
-    lead: 'nodeless installs from npm and produces your `dist/` in memory, in the process you already have — on a server or inside a browser tab. No shell, no filesystem, no container.',
+
+  home: {
+    badge: 'v0.2 is out',
+    title: 'Build a frontend project without Node',
+    lead: 'nodeless installs npm packages and bundles your app in memory. It runs inside your API and inside the browser, with no container to manage.',
     install: 'npm install @salve-software/nodeless',
     copy: 'Copy',
     copied: 'Copied',
-    primary: 'Read the docs',
-    secondary: 'Open the playground',
+    primary: 'Get started',
+    secondary: 'View on GitHub',
+
     stats: [
-      { value: '~200', unit: 'ms', label: 'warm React build' },
-      { value: '4', unit: '', label: 'runtime dependencies' },
-      { value: '0', unit: '', label: 'containers to operate' },
+      { value: '200', unit: 'ms', label: 'to build a React app' },
+      { value: '4', unit: '', label: 'dependencies' },
+      { value: '0', unit: '', label: 'containers' },
     ],
-  },
-  insight: {
-    eyebrow: 'The idea',
-    title: 'A build never runs your app',
-    lead: 'Bundling is reading files, resolving imports and turning TSX into JS. Your components only run later, in the browser of whoever opens the site. The container everyone spins up is isolating something that was never executing.',
-    rows: [
+
+    cards: [
       {
-        job: 'A place to read and write files',
-        vm: 'no',
-        note: 'an object in memory does it',
+        title: 'A real npm install',
+        body: 'Semver ranges, integrity checks and a lockfile. Straight from the registry into memory.',
       },
-      { job: 'npm install and the build', vm: 'no', note: 'both fit in this process' },
       {
-        job: 'Isolating the generated code',
-        vm: 'no',
-        note: 'bundling does not execute',
+        title: 'Your Vite config runs',
+        body: 'Plugins, aliases and define work the way they already do in your project.',
+      },
+      {
+        title: 'One package, both sides',
+        body: 'The same code runs on your server and in a browser tab.',
+      },
+      {
+        title: 'Errors come back as data',
+        body: 'A failed build returns file, line and column. Nothing throws.',
       },
     ],
-    vmLabel: 'Needs a VM?',
-  },
-  graphs: {
-    eyebrow: 'How it holds together',
-    title: 'Two sets of files that never touch',
-    lead: 'A project has a toolchain and an application, and the import edges already separate them. Nothing has to decide which side a file is on.',
-    toolchain: {
-      title: 'The toolchain',
-      verdict: 'Executed, in a sandbox',
-      note: 'A build tool that does not run is a build tool you have to reimplement — once per tool, forever.',
-      files: [
-        'vite.config.ts',
-        '@vitejs/plugin-react',
-        '@tailwindcss/vite',
-        'your-own-plugin.js',
-      ],
+
+    why: {
+      eyebrow: 'How it works',
+      title: 'A bundler never runs your app',
+      body: 'It reads your files and rewrites them. Your components run later, in the browser of whoever opens the site. That step never needed a container.',
+      link: 'Read the details',
+      toolchain: {
+        title: 'Build tools',
+        verdict: 'Run, in a sandbox',
+        files: ['vite.config.ts', '@vitejs/plugin-react', '@tailwindcss/vite'],
+      },
+      app: {
+        title: 'Your app',
+        verdict: 'Only read',
+        files: ['src/main.tsx', 'src/App.tsx', 'react, react-dom'],
+      },
+      note: 'Your app is never imported by your config. The two never meet.',
     },
-    app: {
-      title: 'Your application',
-      verdict: 'Read as text. Never executed.',
-      note: 'Resolving an import and transpiling TSX do not run anything. This half is why no VM is needed.',
-      files: ['index.html', 'src/main.tsx', 'src/App.tsx', 'react, react-dom'],
+
+    sample: {
+      eyebrow: 'In your API',
+      title: 'Three calls and you have a dist',
+      file: 'controller.ts',
+      code: `import { NodelessProject } from '@salve-software/nodeless';
+
+const project = new NodelessProject({ files, isolation: 'none' });
+
+await project.install();
+const result = await project.build();
+
+result.files; // index.html, bundle.js, bundle.css`,
     },
-    footnote:
-      '`App.tsx` is never imported by `vite.config.ts`. `react` is not either — it is imported by `App.tsx`, which is the other side.',
+
+    cta: {
+      title: 'Try it in your browser',
+      body: 'The playground installs React from npm in your tab and rebuilds as you type.',
+      primary: 'Open the playground',
+      secondary: 'Read the docs',
+    },
   },
-  code: {
-    eyebrow: 'In practice',
-    title: 'Three lines on either side of the wire',
-    lead: 'The same package, the same API. What changes is who is calling it.',
-    tabs: [
+
+  docs: {
+    title: 'Docs',
+    subtitle: 'Install it, build something, then wire it up the way you need.',
+    onThisPage: 'On this page',
+    more: 'Design notes',
+    sections: [
       {
-        id: 'api',
-        label: 'In your API',
-        file: 'controller.ts',
-        note: 'Returns a built site from a request handler, with nothing to provision.',
+        id: 'install',
+        title: 'Installation',
+        body: 'Node 20 or newer, or any browser with fetch and WebAssembly.',
+        code: 'npm install @salve-software/nodeless',
+        lang: 'bash',
+      },
+      {
+        id: 'quick-start',
+        title: 'Quick start',
+        body: 'Give it a map of files. You get back index.html, bundle.js and bundle.css as bytes.',
         code: `import { NodelessProject } from '@salve-software/nodeless';
 
-export async function build(files: Record<string, string>) {
-  const project = new NodelessProject({ files, isolation: 'none' });
+const project = new NodelessProject({
+  files: {
+    '/package.json': '{ "dependencies": { "react": "^19.0.0" } }',
+    '/src/main.tsx': "import { createRoot } from 'react-dom/client';",
+  },
+  isolation: 'none',
+});
 
-  await project.install();          // registry → tarball → memory
-  const result = await project.build();
+await project.install();
 
-  if (!result.ok) return { errors: result.errors };
+const result = await project.build();
 
-  return result.files;              // index.html, bundle.js, bundle.css
+if (result.ok) {
+  writeSomewhere(result.files);
+} else {
+  console.error(result.errors);
 }`,
       },
       {
         id: 'browser',
-        label: 'In the browser',
-        file: 'editor.tsx',
-        note: 'Rebuilds as the user types. The toolchain runs in a worker, off the page.',
+        title: 'In the browser',
+        body: 'Pass a wasmURL for esbuild and the rest is the same. Use watch to rebuild as files change.',
         code: `const project = new NodelessProject({
   files: STARTER,
   wasmURL: 'https://unpkg.com/esbuild-wasm/esbuild.wasm',
@@ -101,139 +133,77 @@ export async function build(files: Record<string, string>) {
 project.watch(async () => {
   const result = await project.build({ mode: 'development' });
 
-  if (result.ok) iframe.srcdoc = decode(result.files['index.html']);
+  if (result.ok) {
+    iframe.srcdoc = new TextDecoder().decode(result.files['index.html']);
+  }
 });`,
       },
       {
         id: 'config',
-        label: 'The project’s config',
-        file: 'vite.config.ts',
-        note: '`node:fs` here is the virtual filesystem. The plugin never finds out.',
+        title: 'Project config',
+        body: 'If the project has a vite.config.ts, nodeless runs it. Plugins from npm, virtual modules, define and resolve.alias all work. node:fs inside a plugin reads the virtual filesystem.',
         code: `import { readFileSync } from 'node:fs';
 import react from '@vitejs/plugin-react';
 
 const pkg = JSON.parse(readFileSync('/package.json', 'utf8'));
 
 export default ({ mode }) => ({
-  plugins: [react(), tailwind()],
+  plugins: [react()],
   define: { __VERSION__: JSON.stringify(pkg.version) },
   resolve: { alias: { '~': '/src' } },
 });`,
       },
-    ],
-  },
-  features: {
-    eyebrow: 'What you get',
-    title: 'Everything a build needs, none of the machinery',
-    items: [
       {
-        title: 'A real npm install',
-        body: 'Semver ranges, integrity checks, npm’s flat layout, a lockfile, workspaces. Straight from registry.npmjs.org into memory.',
+        id: 'isolation',
+        title: 'Isolation',
+        body: 'A config is code. Use none when you wrote it, which is the same as requiring it yourself. Use worker when your users write it, and it runs in a separate realm with no DOM, no network and none of your environment.',
+        code: `// Browser
+new NodelessProject({ files, isolation: 'worker' });
+
+// Server
+import { createNodeChannel } from '@salve-software/nodeless/node';
+
+new NodelessProject({ files, isolation: 'worker', channel: createNodeChannel });`,
       },
       {
-        title: 'Your own Vite config',
-        body: 'Plugins from npm, virtual modules, `define`, `resolve.alias` and `defineConfig(({ mode }) => …)`. A tool we have never heard of costs no code here.',
+        id: 'errors',
+        title: 'Errors',
+        body: 'build never throws on a bad project. It returns a result you can branch on.',
+        code: `const result = await project.build();
+
+if (!result.ok) {
+  for (const error of result.errors) {
+    console.log(error.file, error.line, error.text);
+  }
+}`,
       },
       {
-        title: 'Runs in the browser',
-        body: 'A headless Chromium job proves it end to end on every commit: it installs from npm in a tab, builds, and the iframe executes the result.',
+        id: 'options',
+        title: 'Build options',
+        body: 'Every field overrides one default.',
+        table: [
+          ['entry', 'first src/main.* that exists'],
+          ['mode', "'production'"],
+          ['outdir', '/dist'],
+          ['target', "'es2020'"],
+          ['define', '{}'],
+          ['external', '[]'],
+          ['publicDir', '/public'],
+          ['assetLimit', '4096 bytes'],
+          ['env', 'merged into import.meta.env'],
+          ['cdn', 'off'],
+        ],
       },
       {
-        title: 'Errors are data',
-        body: 'A failed build returns `{ ok: false, errors }` with file, line and column. Nothing throws, so the caller can act on it.',
-      },
-      {
-        title: 'Toolchains just work',
-        body: 'Tailwind v4 and Sass compile with no configuration, as optional peers loaded only when a file needs them. CSS modules are built in.',
-      },
-      {
-        title: 'Move it across the wire',
-        body: '`snapshot()` serialises the whole workspace. Install on the server, rebuild in the browser, get the identical bundle.',
-      },
-    ],
-  },
-  isolation: {
-    eyebrow: 'Running someone else’s config',
-    title: 'A separate realm, or none at all',
-    lead: 'A config is code. If your users write it, it is a stranger’s code running next to yours. `isolation: worker` puts it in a realm of its own — and there is a test in CI that tries to break out of it.',
-    columns: {
-      probe: 'What the config tries',
-      none: 'isolation: none',
-      worker: 'isolation: worker',
-    },
-    probes: [
-      { probe: 'Read the API environment', none: 'hunter2', worker: 'blocked' },
-      { probe: 'Count the API environment', none: '76 keys', worker: '0 keys' },
-      { probe: 'Get a native fs binding', none: 'reached', worker: 'blocked' },
-      { probe: 'Get a way to spawn', none: 'reached', worker: 'blocked' },
-      { probe: 'Kill the host process', none: 'reached', worker: 'blocked' },
-      { probe: 'Learn the host cwd', none: 'reached', worker: 'blocked' },
-      { probe: 'Learn the node binary', none: 'reached', worker: 'blocked' },
-    ],
-    note: "`isolation: none` is the default and is not a weak sandbox — it is `require('./vite.config.js')`, which is completely safe for a config you wrote.",
-  },
-  compare: {
-    eyebrow: 'Where it sits',
-    title: 'Not a container, not an emulator',
-    items: [
-      {
-        title: 'A container per build',
-        body: 'Provision, boot, mount, tear down. Seconds of latency and a fleet to operate, to isolate a step that was never executing anything.',
-        verdict: 'What this replaces',
-        tone: 'muted',
-      },
-      {
-        title: 'nodeless',
-        body: 'A library call. In memory, in the process you already have, and the identical code path in a browser tab. Out comes a dist.',
-        verdict: 'A function call',
-        tone: 'accent',
-      },
-      {
-        title: 'A Node emulator',
-        body: 'Shells, dev servers and HMR in the browser. A bigger surface, a different goal, and browser-only — it produces no build artifact.',
-        verdict: 'A different product',
-        tone: 'muted',
+        id: 'limits',
+        title: 'What it does not do',
+        body: 'Packages with native bindings, postinstall scripts, Next.js, and output hooks like generateBundle. The full reasoning is in the design notes.',
       },
     ],
   },
-  faq: {
-    eyebrow: 'Questions',
-    title: 'The ones that come up',
-    items: [
-      {
-        q: 'How can a build work without Node?',
-        a: 'Because a build is text in and text out. It reads files, resolves every import down to `node_modules`, turns TSX into JS and concatenates. None of that executes your components — they run later, in the browser of whoever opens the site.',
-      },
-      {
-        q: 'So how do Vite plugins run, then?',
-        a: 'They run, and that is the point. A project has two sets of files: the toolchain and the application. The toolchain is executed, in a sandbox where `node:fs` is the in-memory filesystem. The application is only ever read.',
-      },
-      {
-        q: 'Does it run `postinstall`?',
-        a: 'No, and it never will. Installing is downloading a tarball and unpacking it. If a package needs a lifecycle script to be usable, it is out of scope by construction.',
-      },
-      {
-        q: 'What about packages with native bindings?',
-        a: 'They cannot work here — they need a process with `dlopen`, and there is none. A package with a WASM build can be mapped to it; one without cannot run.',
-      },
-      {
-        q: 'Is it safe to run untrusted projects?',
-        a: 'The application half, yes — it never executes. For the config half, use `isolation: worker`, which runs it in a separate realm with no DOM, no network and none of your environment. CI has seven probes that try to escape it.',
-      },
-      {
-        q: 'Can it build Next.js?',
-        a: 'No. Next needs native SWC and a real server. Vite projects are the target, and being compatible with Vite plugins is what makes the rest of the ecosystem work.',
-      },
-    ],
-  },
-  cta: {
-    title: 'Build it in the tab you already have',
-    lead: 'The playground installs React from npm in your browser and rebuilds as you type. Nothing is running on a server.',
-    primary: 'Open the playground',
-    secondary: 'Read the design docs',
-  },
+
   footer: {
-    tagline: 'npm install and a frontend build, in-process.',
+    tagline: 'npm install and a frontend build, in memory.',
     madeBy: 'Made by Salve Software',
     license: 'MIT',
     columns: [
@@ -246,7 +216,7 @@ export default ({ mode }) => ({
         ],
       },
       {
-        title: 'Docs',
+        title: 'Learn',
         links: [
           ['README', 'https://github.com/Salve-Software/nodeless#readme'],
           [
