@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 
-export type Route = '/' | '/docs';
+export type Route = '/' | '/docs' | '/playground';
 
 function current(): Route {
   const path = window.location.pathname.replace(import.meta.env.BASE_URL, '/');
 
-  return path.startsWith('/docs') ? '/docs' : '/';
+  if (path.startsWith('/docs')) return '/docs';
+  if (path.startsWith('/playground')) return '/playground';
+
+  return '/';
 }
 
 /** Path routing, with a 404.html copy so a deep link works on GitHub Pages. */

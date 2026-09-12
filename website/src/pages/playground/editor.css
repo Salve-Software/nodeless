@@ -1,0 +1,42 @@
+.editor {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: var(--code-bg);
+}
+
+.editor__view,
+.editor__input {
+  margin: 0;
+  padding: 1rem 1.15rem 2.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.7;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+  border: none;
+}
+
+.editor__view {
+  position: absolute;
+  inset: 0;
+  color: #d7dce7;
+  pointer-events: none;
+}
+
+.editor__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  resize: none;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--accent);
+  outline: none;
+}
+
+.editor__input::selection {
+  background: color-mix(in oklab, var(--accent) 28%, transparent);
+}
