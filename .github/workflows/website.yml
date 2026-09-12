@@ -30,9 +30,16 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: website/package-lock.json
 
-      - run: npm ci
+      # The playground runs the library from this repository, not from the registry, so the
+      # site always demos the code on this commit.
+      - name: Build the library
+        working-directory: .
+        run: |
+          npm ci
+          npm run build
+
+      - run: npm install
 
       - name: Lint
         run: npm run lint
