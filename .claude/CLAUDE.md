@@ -88,8 +88,9 @@ evaluated off the page.
 - **`isolation: 'none'` is not a sandbox and is not sold as one.** `Function('return this')()`
   reaches the host's realm, and no amount of shadowing changes that. It means "run this config
   in my process" — safe for a config you wrote, unsafe for one you did not.
-- **`process.cwd()` in a Node worker** still reports the host's directory: a worker thread
-  shares it with the process that spawned it. Path disclosure, not secrets.
+- **A `vm` context inside the worker** would add nothing: the host object has to cross into
+  it, and `crossed.constructor.constructor` walks straight back out. The isolate boundary is
+  the real one.
 
 ## Mandatory rules
 

@@ -60,8 +60,10 @@ reference inside a config resolves to the shim and not the host's. Without that,
 in a config is the environment of whatever is running the build — on a server, your secrets.
 Shadowing stops there, and it is worth being precise about why: `Function('return this')()`
 reaches the realm's global whatever you shadowed, and so does indirect `eval`. **Same-realm
-isolation is not achievable by hiding names.** `isolation: 'worker'` is a separate realm, and
-`sealProcess` removes the native bindings that realm still had.
+isolation is not achievable by hiding names.** `isolation: 'worker'` is a separate realm, and that
+realm gets a `process` of its own — the shim, installed as a getter that follows `init`.
+Structural, not enumerative: there is no real process to reach. `sealProcess` removes the
+native bindings as insurance on top of that.
 
 `WorkerRuntime` is the hardened one, behind the same port. It bundles identically and evaluates
 in a Worker, which costs a channel: structured clone carries no functions, so a plugin crosses
