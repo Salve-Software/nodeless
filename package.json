@@ -19,6 +19,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./worker": {
+      "types": "./dist/runtime-worker.d.ts",
+      "default": "./dist/runtime-worker.js"
     }
   },
   "files": [
@@ -46,7 +50,8 @@
     "typescript"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && npm run build:worker",
+    "build:worker": "tsx scripts/build-worker.ts",
     "typecheck": "tsc --noEmit",
     "typecheck:fast": "tsgo --noEmit",
     "lint": "eslint .",

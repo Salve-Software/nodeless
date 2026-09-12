@@ -126,7 +126,12 @@ export default config(
   },
 
   {
-    files: ['src/**/__tests__/**/*.ts', 'example/**/*.ts', '*.config.ts'],
+    files: [
+      'src/**/__tests__/**/*.ts',
+      'example/**/*.ts',
+      'scripts/**/*.ts',
+      '*.config.ts',
+    ],
     rules: {
       'no-restricted-imports': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
