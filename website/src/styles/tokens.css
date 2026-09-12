@@ -68,11 +68,15 @@
   --code-bg: #0b0e14;
   --grad-mid: var(--node-500);
   --grad-end: var(--salve-blue);
+  --brand-a: #a78bfa;
+  --brand-b: #8ce04a;
 }
 
 [data-theme='light'] {
   --grad-mid: #57a81f;
   --grad-end: #2563eb;
+  --brand-a: #6d4df0;
+  --brand-b: #4f9a1e;
   --bg: #fcfdfe;
   --bg-raised: #ffffff;
   --surface: #ffffff;
