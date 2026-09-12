@@ -59,6 +59,11 @@ jobs:
       - name: Example — run a project's vite config
         run: npm run example:vite
 
+      # The server half of the isolation story: it sets two fake secrets on the process,
+      # then shows a config reading them in-process and failing to from a worker thread.
+      - name: Example — what a config can see of the API process
+        run: npm run example:isolation
+
   browser:
     name: Browser
     needs: verify
