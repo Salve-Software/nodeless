@@ -3,6 +3,7 @@ import type { RuntimeModule } from '@/types/index.js';
 import {
   HOST_GLOBAL,
   MODULE_GLOBAL,
+  SHADOWED_GLOBALS,
 } from '@/classes/runtime/module-runtime/constants/index.js';
 import { toRuntimeError } from './to-runtime-error.js';
 
@@ -25,11 +26,14 @@ export function evaluateModule({
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-implied-eval -- the library's premise
-    const factory = new Function(HOST_GLOBAL, body) as (
+    const factory = new Function(HOST_GLOBAL, ...SHADOWED_GLOBALS, body) as (
       host: RuntimeHost,
+      ...shadowed: unknown[]
     ) => RuntimeModule;
 
-    return factory(host);
+    return factory(host, host.shim('process'), (name: string) =>
+      host.require(name, path),
+    );
   } catch (error) {
     throw toRuntimeError(error, path);
   }

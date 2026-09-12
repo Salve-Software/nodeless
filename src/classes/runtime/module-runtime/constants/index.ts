@@ -8,4 +8,5 @@ export * from './runtime-conditions.js';
 export * from './runtime-loaders.js';
 export * from './runtime-namespace.js';
 export * from './runtime-target.js';
+export * from './shadowed-globals.js';
 export * from './shim-namespace.js';
