@@ -13,8 +13,9 @@ for (const name of VENDORED_PACKAGES) {
   );
 }
 
-// No options at all. The project ships a vite.config.ts, so the build runs it.
-const project = new NodelessProject({ files });
+// The project ships a vite.config.ts, so the build runs it. `isolation: 'none'` says that
+// running it in this process is intended — which it is, because this repository wrote it.
+const project = new NodelessProject({ files, isolation: 'none' });
 
 const startedAt = Date.now();
 const result = await project.build({ mode: 'development' });
