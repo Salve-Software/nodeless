@@ -1,0 +1,50 @@
+.cta__panel {
+  position: relative;
+  padding: clamp(2.5rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(165deg, var(--surface), var(--bg-raised));
+  text-align: center;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.cta__orb {
+  position: absolute;
+  top: -60%;
+  left: 50%;
+  width: 80%;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--accent) 16%, transparent),
+    transparent 62%
+  );
+  animation: drift 22s var(--ease-soft) infinite;
+  pointer-events: none;
+}
+
+.cta__panel h2 {
+  position: relative;
+  font-size: var(--step-3);
+  max-width: 20ch;
+  margin-inline: auto;
+}
+
+.cta__panel p {
+  position: relative;
+  margin: var(--gap-3) auto 0;
+  max-width: 52ch;
+  color: var(--text-muted);
+}
+
+.cta__actions {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-2);
+  justify-content: center;
+  margin-top: var(--gap-4);
+}
