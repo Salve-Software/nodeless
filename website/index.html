@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <title>nodeless — npm install and a frontend build, in-process</title>
+    <meta
+      name="description"
+      content="Install npm dependencies and build a frontend project in memory, in the same process. No shell, no filesystem, no container. The same code on a server and in the browser."
+    />
+    <meta property="og:title" content="nodeless" />
+    <meta
+      property="og:description"
+      content="npm install and a frontend build, in-process. No shell, no filesystem, no container."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Before first paint, so the page never flashes the wrong theme.
+      (() => {
+        document.documentElement.dataset.theme =
+          localStorage.getItem('nodeless-theme') ?? 'dark';
+        const lang =
+          localStorage.getItem('nodeless-lang') ??
+          (navigator.language.startsWith('pt') ? 'pt-BR' : 'en');
+        document.documentElement.lang = lang;
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
