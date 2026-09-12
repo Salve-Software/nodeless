@@ -4,7 +4,7 @@ import type { BuildMessage } from '@salve-software/nodeless';
 import { STARTER } from './starter';
 import { toPreviewHtml } from './to-preview-html';
 
-const WASM_URL = 'https://unpkg.com/esbuild-wasm@0.25.12/esbuild.wasm';
+const WASM_URL = 'https://unpkg.com/esbuild-wasm@0.28.2/esbuild.wasm';
 
 export type Phase = 'installing' | 'building' | 'ready' | 'failed';
 
