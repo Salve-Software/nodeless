@@ -10,38 +10,20 @@
   flex: none;
 }
 
-.brand__block {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: settle 0.6s var(--ease) backwards;
+.brand__ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 6 17.56;
+  animation: assemble 0.7s var(--ease) backwards;
 }
 
-.brand__block--a {
-  fill: var(--brand-a);
-  animation-delay: 0.05s;
-}
-
-.brand__block--b {
-  fill: var(--brand-b);
-  animation-delay: 0.18s;
-}
-
-/* They arrive from their own corner, which is the only thing the mark has to say. */
-@keyframes settle {
+/* 23.56 is one dash plus one gap, so the dashes turn exactly one step and land where they started. */
+@keyframes assemble {
   from {
     opacity: 0;
-    transform: translate(-2px, -2px) scale(0.82);
-  }
-}
-
-.brand__block--b {
-  animation-name: settle-b;
-}
-
-@keyframes settle-b {
-  from {
-    opacity: 0;
-    transform: translate(2px, 2px) scale(0.82);
+    stroke-dashoffset: 23.56;
   }
 }
 

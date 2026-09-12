@@ -203,6 +203,30 @@
   line-height: 1.65;
 }
 
+/*
+ * The grid draws the hairlines with its own background and the cards cover it, so the reveal
+ * belongs to the grid: a card that fades on its own leaves that background showing as a grey
+ * slab. The stagger moves down to the text, which covers nothing.
+ */
+.cards__grid h3,
+.cards__grid p {
+  opacity: 0;
+  transform: translateY(9px);
+  transition:
+    opacity 0.5s var(--ease) var(--reveal-delay, 0ms),
+    transform 0.5s var(--ease) var(--reveal-delay, 0ms);
+}
+
+.cards__grid p {
+  transition-delay: calc(var(--reveal-delay, 0ms) + 70ms);
+}
+
+.cards__grid[data-shown='true'] h3,
+.cards__grid[data-shown='true'] p {
+  opacity: 1;
+  transform: none;
+}
+
 /* why */
 .why__head h2 {
   font-size: var(--step-3);

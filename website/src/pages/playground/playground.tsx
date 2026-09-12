@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Editor } from './editor';
+import { StatusPill } from './status-pill';
 import { usePlayground } from './use-playground';
 import { FILE_ORDER } from './starter';
 import { useCopy } from '@/i18n/use-copy';
@@ -13,14 +14,6 @@ export function Playground() {
   const [draft, setDraft] = useState<Record<string, string>>({});
 
   const value = draft[file] ?? read(file);
-  const status =
-    phase === 'installing'
-      ? page.status.installing
-      : phase === 'building'
-        ? page.status.building
-        : phase === 'failed'
-          ? page.status.failed
-          : `${String(durationMs)} ms`;
 
   return (
     <div className="pg">
@@ -35,10 +28,7 @@ export function Playground() {
               {packages} {page.packages}
             </span>
           )}
-          <span className="pg__status" data-phase={phase}>
-            <i />
-            {status}
-          </span>
+          <StatusPill phase={phase} durationMs={durationMs} labels={page.status} />
         </span>
       </div>
 

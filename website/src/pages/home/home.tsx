@@ -81,11 +81,10 @@ export function Home({ go }: { go: (to: Route) => void }) {
       </section>
 
       <section className="section cards">
-        <div className="shell cards__grid">
+        <div className="shell cards__grid" data-reveal>
           {home.cards.map((card, index) => (
             <article
               key={card.title}
-              data-reveal
               style={
                 { '--reveal-delay': `${String(index * 70)}ms` } as React.CSSProperties
               }
