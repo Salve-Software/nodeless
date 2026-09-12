@@ -1,3 +1,4 @@
+export * from './bundle-module.js';
 export * from './create-runtime-plugin.js';
 export * from './create-shim-module.js';
 export * from './evaluate-module.js';

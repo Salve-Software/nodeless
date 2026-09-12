@@ -16,13 +16,13 @@ import { loadRuntimeFile } from './load-runtime-file.js';
 export function createRuntimePlugin({
   vfs,
   resolver,
-  shims,
+  isShimmed,
 }: RuntimePluginOptions): Plugin {
   return {
     name: 'nodeless-runtime',
     setup(build) {
       build.onResolve({ filter: /.*/ }, (args) => {
-        if (shims.has(args.path)) {
+        if (isShimmed(args.path)) {
           return { path: args.path.replace(/^node:/, ''), namespace: SHIM_NAMESPACE };
         }
 

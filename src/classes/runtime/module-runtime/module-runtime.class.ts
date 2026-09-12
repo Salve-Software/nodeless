@@ -2,9 +2,7 @@ import type { ModuleRuntimeOptions, RuntimeHost } from './types/index.js';
 import type { EsbuildApi, Resolver, Runtime, RuntimeModule, Vfs } from '@/types/index.js';
 import { NodeShims } from '@/classes/shims/index.js';
 import { ROOT_PATH } from '@/constants/index.js';
-import { initializeEsbuild, loadEsbuild } from '@/library/index.js';
-import { MODULE_GLOBAL, RUNTIME_TARGET } from './constants/index.js';
-import { createRuntimePlugin, evaluateModule, toRuntimeError } from './library/index.js';
+import { bundleModule, evaluateModule } from './library/index.js';
 
 /**
  * Runs the toolchain graph and nothing else. `vite.config.ts` and the plugins it imports go
@@ -50,34 +48,16 @@ export class ModuleRuntime implements Runtime {
   }
 
   private async evaluate(path: string): Promise<RuntimeModule> {
-    const api = this.esbuild ?? (await loadEsbuild());
-
-    await initializeEsbuild(api, this.wasmURL);
-
-    const result = await api.build({
-      entryPoints: [path],
-      bundle: true,
-      write: false,
-      format: 'iife',
-      globalName: MODULE_GLOBAL,
-      // `browser` would substitute a literal for `process.env.NODE_ENV`; the shim owns it.
-      platform: 'neutral',
-      target: RUNTIME_TARGET,
-      absWorkingDir: ROOT_PATH,
-      logLevel: 'silent',
-      sourcemap: 'inline',
-      plugins: [
-        createRuntimePlugin({
-          vfs: this.vfs,
-          resolver: this.resolver,
-          shims: this.shims,
-        }),
-      ],
-    });
-
-    const code = result.outputFiles?.[0]?.text;
-
-    if (code === undefined) throw toRuntimeError(new Error('emitted nothing'), path);
+    const code = await bundleModule(
+      {
+        vfs: this.vfs,
+        resolver: this.resolver,
+        isShimmed: (specifier) => this.shims.has(specifier),
+        ...(this.esbuild === undefined ? {} : { esbuild: this.esbuild }),
+        ...(this.wasmURL === undefined ? {} : { wasmURL: this.wasmURL }),
+      },
+      path,
+    );
 
     return evaluateModule({ code, path, host: this.host() });
   }
