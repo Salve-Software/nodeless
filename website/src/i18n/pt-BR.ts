@@ -4,6 +4,7 @@ export const ptBR: Copy = {
   nav: {
     home: 'Início',
     docs: 'Docs',
+    playground: 'Playground',
     github: 'GitHub',
     npm: 'npm',
     theme: 'Alternar tema',
@@ -82,6 +83,19 @@ result.files; // index.html, bundle.js, bundle.css`,
       body: 'O playground instala o React do npm na sua aba e rebuilda enquanto você digita.',
       primary: 'Abrir o playground',
       secondary: 'Ler a documentação',
+    },
+  },
+
+  playground: {
+    title: 'Playground',
+    lead: 'O React é instalado do npm nesta aba e bundlado aqui. Edite um arquivo e o preview rebuilda.',
+    preview: 'preview',
+    packages: 'pacotes',
+    note: 'Não tem nada rodando num servidor. O config da esquerda roda num Worker, fora desta página.',
+    status: {
+      installing: 'instalando do npm',
+      building: 'buildando',
+      failed: 'o build falhou',
     },
   },
 

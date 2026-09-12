@@ -3,7 +3,7 @@ import { CodeBlock } from '@/components/ui/code-block';
 import { Link } from '@/router/link';
 import { useCopy } from '@/i18n/use-copy';
 import { useReveal } from '@/hooks/use-reveal';
-import { REPO_URL, PLAYGROUND_URL } from '@/data/links';
+import { REPO_URL } from '@/data/links';
 import type { Route } from '@/router/use-route';
 import { useState } from 'react';
 import './home.css';
@@ -164,9 +164,9 @@ export function Home({ go }: { go: (to: Route) => void }) {
             <h2>{home.cta.title}</h2>
             <p>{home.cta.body}</p>
             <div className="closing__actions">
-              <a className="btn btn--primary" href={PLAYGROUND_URL}>
+              <Link to="/playground" go={go} className="btn btn--primary">
                 {home.cta.primary}
-              </a>
+              </Link>
               <Link to="/docs" go={go} className="btn btn--ghost">
                 {home.cta.secondary}
               </Link>

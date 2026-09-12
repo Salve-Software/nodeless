@@ -35,6 +35,9 @@ export function Nav({ route, go }: { route: Route; go: (to: Route) => void }) {
           <Link to="/docs" go={go}>
             <span data-on={route === '/docs'}>{copy.nav.docs}</span>
           </Link>
+          <Link to="/playground" go={go}>
+            <span data-on={route === '/playground'}>{copy.nav.playground}</span>
+          </Link>
           <a href={REPO_URL}>
             <span>{copy.nav.github}</span>
           </a>

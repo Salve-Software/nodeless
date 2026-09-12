@@ -2,6 +2,7 @@ export const en = {
   nav: {
     home: 'Home',
     docs: 'Docs',
+    playground: 'Playground',
     github: 'GitHub',
     npm: 'npm',
     theme: 'Toggle theme',
@@ -80,6 +81,19 @@ result.files; // index.html, bundle.js, bundle.css`,
       body: 'The playground installs React from npm in your tab and rebuilds as you type.',
       primary: 'Open the playground',
       secondary: 'Read the docs',
+    },
+  },
+
+  playground: {
+    title: 'Playground',
+    lead: 'React is installed from npm in this tab and bundled here. Edit a file and the preview rebuilds.',
+    preview: 'preview',
+    packages: 'packages',
+    note: 'Nothing is running on a server. The config on the left runs in a Worker, off this page.',
+    status: {
+      installing: 'installing from npm',
+      building: 'building',
+      failed: 'build failed',
     },
   },
 
