@@ -17,6 +17,7 @@ export default config(
       'example/tailwind',
       'example/vite',
       'example/node/dist',
+      'website',
     ],
   },
 
