@@ -16,6 +16,7 @@ import { bundleModule } from '@/classes/runtime/module-runtime/library/index.js'
 import { NodeShims } from '@/classes/shims/index.js';
 import { DEFAULT_CONDITIONS, ROOT_PATH } from '@/constants/index.js';
 import { RuntimeError } from '@/errors/index.js';
+import { FATAL_RESPONSE_ID } from './constants/index.js';
 import {
   collectVfsPatch,
   createWorkerChannel,
@@ -89,9 +90,12 @@ export class WorkerRuntime implements Runtime {
     this.started = undefined;
     this.modules.clear();
 
-    for (const { reject } of this.pending.values()) {
-      reject(new RuntimeError('The runtime worker was disposed', {}));
-    }
+    this.rejectAll(new RuntimeError('The runtime worker was disposed', {}));
+  }
+
+  /** A worker that dies takes every call in flight with it, and none of them has an id to match. */
+  private rejectAll(error: RuntimeError): void {
+    for (const { reject } of this.pending.values()) reject(error);
     this.pending.clear();
   }
 
@@ -185,6 +189,16 @@ export class WorkerRuntime implements Runtime {
   }
 
   private settle(response: WorkerResponse): void {
+    if (response.id === FATAL_RESPONSE_ID) {
+      this.rejectAll(
+        new RuntimeError(
+          response.ok ? 'The runtime worker stopped' : response.message,
+          {},
+        ),
+      );
+      return;
+    }
+
     const waiting = this.pending.get(response.id);
 
     if (!waiting) return;
