@@ -1,4 +1,9 @@
-<h1 align="center">nodeless</h1>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo/nodeless-lockup-dark.svg">
+    <img src="./assets/logo/nodeless-lockup-light.svg" alt="nodeless" width="210">
+  </picture>
+</p>
 
 <p align="center">
   <strong>npm install and a frontend build, in-process</strong>

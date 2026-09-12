@@ -7,3 +7,7 @@ CHANGELOG.md
 # Copied out of the library's own build by the site's vite config.
 website/public/runtime-worker.js
 website/dist
+
+# Delivered by the designer, provenance manifest and all.
+assets/logo
+website/public/*.svg
