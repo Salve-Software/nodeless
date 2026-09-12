@@ -92,6 +92,9 @@ The rules that back the structure rules: `max-params: 2`, `member-ordering`,
 `consistent-type-imports`, `import-x/order` with the `type` group on top, `../` banned by regex,
 and `no-restricted-imports` over Node builtins.
 
+Plus `no-restricted-syntax` over `**/*.class.ts`, which is what makes "a class file holds the
+class and nothing else" a guard instead of a convention.
+
 Two documented relaxations: `max-params` is off under `src/classes/shims/`, which mirrors Node's
 signatures, and `no-implied-eval` is disabled on the single `new Function` line in
 `evaluate-module.ts`.

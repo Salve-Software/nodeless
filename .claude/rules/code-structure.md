@@ -33,6 +33,11 @@ The `.class.ts` suffix belongs to classes only. Everything else is a plain name.
 **No loose `function`, no `type` declared in the class file.** Functions go to `library/` — where
 they earn their own file and test — or become private methods. Types go to `types/`.
 
+**This one is enforced**, by `no-restricted-syntax` over `**/*.class.ts` in `eslint.config.js`.
+It is a lint rule and not a convention because it had already slipped once: `entryNotFound`
+sat at the bottom of `esbuild-bundler.class.ts` for as long as that file existed, and nothing
+said so. A rule that only lives in a document is a rule that comes back.
+
 Allowed as module-private functions: table dispatch, error construction, and string plumbing.
 **The documented exception is `resolve-specifier.ts`**: the `browser` field override calls
 `resolveSpecifier` back, and a separate file would create a circular import inside `library/`.
