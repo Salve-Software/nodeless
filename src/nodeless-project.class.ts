@@ -24,7 +24,11 @@ import { NodeResolver } from '@/classes/resolver/index.js';
 import { ModuleRuntime, WorkerRuntime } from '@/classes/runtime/index.js';
 import { RUNTIME_CONDITIONS } from '@/classes/runtime/module-runtime/constants/index.js';
 import { MemoryVfs } from '@/classes/vfs/index.js';
-import { DEFAULT_CONDITIONS, DEFAULT_DEBOUNCE_MS } from '@/constants/index.js';
+import {
+  DEFAULT_CONDITIONS,
+  DEFAULT_DEBOUNCE_MS,
+  UNSET_ISOLATION_WARNING,
+} from '@/constants/index.js';
 import { tryResolve } from '@/library/index.js';
 import { sassPlugin, tailwindPlugin } from '@/plugins/index.js';
 
@@ -80,11 +84,13 @@ export class NodelessProject {
     const bundler = this.bundlerFor(config.plugins, config.aliases);
     const outdir = options.outdir ?? config.outdir;
 
-    return bundler.build({
+    const result = await bundler.build({
       ...options,
       define: { ...config.define, ...options.define },
       ...(outdir === undefined ? {} : { outdir }),
     });
+
+    return this.warnAboutIsolation(result, config.path);
   }
 
   watch(
@@ -172,6 +178,21 @@ export class NodelessProject {
     });
 
     return this.bundler;
+  }
+
+  /** Only when a config actually ran: a project without one evaluates nothing to isolate. */
+  private warnAboutIsolation(
+    result: BuildResult,
+    configPath: string | undefined,
+  ): BuildResult {
+    if (configPath === undefined || this.options.isolation !== undefined) return result;
+
+    const warnings = [
+      ...result.warnings,
+      { text: UNSET_ISOLATION_WARNING, file: configPath },
+    ];
+
+    return result.ok ? { ...result, warnings } : { ...result, warnings };
   }
 
   private reset(): void {
