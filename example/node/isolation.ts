@@ -9,17 +9,22 @@ const WORKER_URL = pathToFileURL(
 ).href;
 
 process.env['API_DB_PASSWORD'] = 'hunter2';
-process.env['API_STRIPE_KEY'] = 'sk_live_do_not_leak';
 
-/** What the project's own config managed to see, as the literal `define` put in the bundle. */
-async function sawInConfig(
-  expression: string,
-  isolation: 'none' | 'worker',
-): Promise<string> {
+/**
+ * Runs a probe inside the project's own config and reports what it saw. `Function('return
+ * this')()` is in most of them on purpose: shadowing a name is a speed bump, and that one
+ * line walks around it, which is the whole reason a second realm is the only real answer.
+ */
+async function probe(body: string, isolation: 'none' | 'worker'): Promise<string> {
   const project = new NodelessProject({
     files: {
       '/src/main.ts': 'export const x = __SEEN__;',
-      '/vite.config.js': `export default { define: { __SEEN__: JSON.stringify(${expression}) } };`,
+      '/vite.config.js': `export default async () => {
+        let seen;
+        try { seen = String(await (async () => { ${body} })()); }
+        catch (error) { seen = 'blocked'; }
+        return { define: { __SEEN__: JSON.stringify(seen) } };
+      };`,
     },
     isolation,
     ...(isolation === 'worker'
@@ -40,55 +45,70 @@ async function sawInConfig(
   return /"([^"]*)"/.exec(bundle)?.[1] ?? '(nothing)';
 }
 
+const HOST = "Function('return this')()";
 const probes = [
-  [
-    'the API env, through globalThis',
-    "globalThis.process?.env?.API_DB_PASSWORD ?? 'not visible'",
-  ],
-  [
-    'the API env, as keys',
-    "String(Object.keys(globalThis.process?.env ?? {}).length) + ' keys'",
-  ],
-  ['the working directory', "globalThis.process?.cwd?.() ?? 'no process'"],
-] as const;
+  {
+    label: 'read the API env',
+    body: `const g = ${HOST}; return g.process?.env?.API_DB_PASSWORD ?? 'blocked';`,
+    reached: 'hunter2',
+  },
+  {
+    label: 'count the API env',
+    body: `const g = ${HOST}; return Object.keys(g.process?.env ?? {}).length + ' keys';`,
+    reached: undefined,
+  },
+  {
+    label: 'get a native fs binding',
+    body: `const g = ${HOST}; return g.process.binding('fs') ? 'reached' : 'blocked';`,
+    reached: 'reached',
+  },
+  {
+    label: 'get a way to spawn',
+    body: `const g = ${HOST}; return g.process.binding('spawn_sync') ? 'reached' : 'blocked';`,
+    reached: 'reached',
+  },
+  {
+    label: 'kill the host process',
+    body: `const g = ${HOST}; return typeof g.process.kill === 'function' ? 'reached' : 'blocked';`,
+    reached: 'reached',
+  },
+];
 
-console.log('  what the project config can see of the API process\n');
-console.log(`  ${'probe'.padEnd(34)} ${'isolation: none'.padEnd(24)} isolation: worker`);
-console.log(`  ${'-'.repeat(34)} ${'-'.repeat(24)} ${'-'.repeat(24)}`);
+console.log("  what a project's own config can reach of the process building it\n");
+console.log(`  ${'probe'.padEnd(24)} ${'isolation: none'.padEnd(18)} isolation: worker`);
+console.log(`  ${'-'.repeat(24)} ${'-'.repeat(18)} ${'-'.repeat(18)}`);
 
-const results: { label: string; open: string; sealed: string }[] = [];
+const failures: string[] = [];
 
-for (const [label, expression] of probes) {
-  const open = await sawInConfig(expression, 'none');
-  const sealed = await sawInConfig(expression, 'worker');
+for (const { label, body, reached } of probes) {
+  const open = await probe(body, 'none');
+  const sealed = await probe(body, 'worker');
 
-  results.push({ label, open, sealed });
-  console.log(
-    `  ${label.padEnd(34)} ${open.slice(0, 23).padEnd(24)} ${sealed.slice(0, 24)}`,
-  );
+  console.log(`  ${label.padEnd(24)} ${open.padEnd(18)} ${sealed}`);
+
+  if (sealed === 'reached' || sealed === 'hunter2') {
+    failures.push(`the worker did not block "${label}"`);
+  }
+  // A probe that stops reproducing in-process proves nothing about the worker either.
+  if (reached !== undefined && open !== reached) {
+    failures.push(`"${label}" no longer reproduces in-process, so it guards nothing`);
+  }
 }
 
-// A build has to produce the same thing either way, or isolation is not an option but a fork.
-const open = await sawInConfig("'same either way'", 'none');
-const sealed = await sawInConfig("'same either way'", 'worker');
+// Isolation has to be an option, not a fork: both modes must build the same thing.
+const [open, sealed] = await Promise.all([
+  probe("return 'same either way';", 'none'),
+  probe("return 'same either way';", 'worker'),
+]);
+
+if (open !== sealed) failures.push(`the modes disagreed: "${open}" and "${sealed}"`);
 
 console.log();
 
-if (open !== sealed) {
-  console.error(`the two modes built different results: "${open}" and "${sealed}"`);
+if (failures.length > 0) {
+  for (const failure of failures) console.error(`  ✗ ${failure}`);
   process.exit(1);
 }
 
-const leaked = results.filter(({ sealed: value }) => value.includes('hunter2'));
-
-if (leaked.length > 0) {
-  console.error(`the worker leaked: ${leaked.map(({ label }) => label).join(', ')}`);
-  process.exit(1);
-}
-if (!results[0] || results[0].open !== 'hunter2') {
-  console.error('the in-process probe did not reproduce the leak it is there to show');
-  process.exit(1);
-}
-
-console.log('  ✓ the API env is reachable in-process and not from the worker thread');
+console.log('  ✓ every probe that reaches the host in-process is blocked in the worker');
 console.log('  ✓ both modes build the same bundle');
