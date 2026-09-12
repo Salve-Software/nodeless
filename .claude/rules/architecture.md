@@ -55,6 +55,11 @@ enforce it:
 `data:` URL import is blocked by CSP in a browser. It is the least isolated of the three, and
 that is acceptable **because isolation was decided at bundle time**.
 
+**`process` and `require` are shadowed as parameters of the evaluated function**, so a bare
+reference inside a config resolves to the shim and not the host's. Without that, `process.env`
+in a config is the environment of whatever is running the build — on a server, your secrets.
+`globalThis` is not shadowable, and closing that is what the second mode is for.
+
 `WorkerRuntime` is the hardened one, behind the same port. It bundles identically and evaluates
 in a Worker, which costs a channel: structured clone carries no functions, so a plugin crosses
 as data with every hook replaced by a handle. Only VFS deltas cross, and every call flushes
@@ -99,6 +104,9 @@ and it comes out as `RuntimeError` naming the module with the original error as 
 - **`src/index.ts` never uses `export *`.** Every name is listed.
 - **A package installs, it never runs.** No `postinstall`, no `prepare`. Installing is
   downloading and unpacking; the toolchain runs at build time, from what was unpacked.
+- **`src/node/` is Node-only and nothing in `src/` may import it.** It is the server half of
+  `isolation: 'worker'`, built by `tsconfig.node.json` with `types: ["node"]` and excluded from
+  the isomorphism guard. The dependency only ever points inward.
 - **The worker entry is published bundled.** A blob Worker inherits no import map, so
   `dist/runtime-worker.js` must have zero bare imports; `build:worker` fails the build if one
   survives. It is the one file in `dist/` that is not plain `tsc` output.

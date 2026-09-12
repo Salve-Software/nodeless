@@ -110,6 +110,23 @@ before the first line runs. The cost is a channel, and the channel is the intere
 - **Every call flushes those deltas first.** A hook reading `this.vfs` runs long after the
   module was evaluated, and has to see the file the user just edited.
 
+**The same gap exists on a server, and it is worse there.** In-process, a config writing
+`globalThis.process.env` reads the environment of whatever is running the build — in an API,
+that is your database password. `createNodeChannel` from the `/node` entry is the server half:
+a `worker_threads` worker is a realm of its own, and `env: {}` means its `process.env` is empty
+rather than a copy of yours.
+
+```
+  probe                              isolation: none          isolation: worker
+  the API env, through globalThis    hunter2                  not visible
+  the API env, as keys               77 keys                  0 keys
+```
+
+Two things narrow the gap even without a second realm, and they apply on both sides:
+`process` and `require` are **shadowed as parameters** of the evaluated function, so a bare
+reference resolves to the shim. `globalThis` cannot be shadowed that way, which is the whole
+reason the second mode exists.
+
 The default stays in-process because that half is the isomorphic one, and because a project
 with no config file evaluates nothing at all — there is nothing to isolate.
 
@@ -139,6 +156,9 @@ plugin from npm cost nothing here.
   more honest than pretending to thread it.
 - **A moving target.** Vite's plugin API changes across majors. Smaller than a folder per tool,
   larger than zero.
-- **A hardened runtime on a server.** `isolation: 'worker'` needs a browser `Worker`. On Node
-  the seam exists — `runtime` takes any implementation of the port, and `RuntimeChannel` is
-  what a `worker_threads` adapter would implement — but nothing ships for it yet.
+- **`process.cwd()` inside a Node worker** is still the host's directory: a worker thread
+  shares it with the process that spawned it. Path disclosure, not secrets, and there is no
+  per-thread cwd to set.
+- **A `vm` context would be tighter still** than a worker thread for a hostile config, and
+  Node's own docs are clear that `vm` is not a security boundary either. A worker thread with
+  an empty env and a memory limit is the honest middle.

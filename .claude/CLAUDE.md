@@ -53,6 +53,8 @@ work up front; it is work that ends. This is the bet Sandpack and WebContainer b
    `isolation: 'worker'` adds distance from the page on top of that; it does not replace it.
 3. **The package is genuinely isomorphic.** One codebase, zero Node builtins in `src/`. What
    enforces it is `tsconfig.build.json` with `types: []` — it breaks the build if anyone slips.
+   `src/node/` is the one deliberate exception: a Node-only entry, built by its own tsconfig,
+   excluded from the guard, and imported by nothing inside `src/`.
 4. **A failing build returns a structured error; it does not throw.** `{ ok: false, errors }`
    with file and line. `build()` also never writes to the VFS — if it did, `watch` would fire
    itself.
@@ -80,8 +82,8 @@ evaluated off the page.
 - **Running real `vite build`.** Out of scope: it wants `worker_threads`, a server, and native
   rollup. Being _compatible with_ Vite plugins is what buys the coverage.
 - **React Refresh.** Still a deliberate no — a rebuild plus an iframe reload costs ~200 ms.
-- **A hardened runtime on the server.** `isolation: 'worker'` is browser-only. A Node host can
-  pass `runtime` with an implementation over `worker_threads`; the port is the seam for it.
+- **`process.cwd()` in a Node worker** still reports the host's directory: a worker thread
+  shares it with the process that spawned it. Path disclosure, not secrets.
 
 ## Mandatory rules
 
