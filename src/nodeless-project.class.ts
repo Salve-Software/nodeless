@@ -119,7 +119,7 @@ export class NodelessProject {
    * and no network. The default stays in-process because it is the half that is isomorphic.
    */
   private createRuntime(): Runtime {
-    const { esbuild, wasmURL, workerUrl, isolation = 'none' } = this.options;
+    const { esbuild, wasmURL, workerUrl, channel, isolation = 'none' } = this.options;
     const shared = {
       vfs: this.vfs,
       resolver: new NodeResolver({ vfs: this.vfs, conditions: RUNTIME_CONDITIONS }),
@@ -133,6 +133,7 @@ export class NodelessProject {
       ...shared,
       conditions: RUNTIME_CONDITIONS,
       ...(workerUrl === undefined ? {} : { workerUrl }),
+      ...(channel === undefined ? {} : { channel }),
     });
   }
 
