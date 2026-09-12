@@ -65,6 +65,24 @@ Without rewriting the extension, no modern TypeScript scaffold resolves. The rul
 - then the extension list, `.tsx` before `.js`;
 - last the rewrite: `.js` → `.ts`/`.tsx`, `.mjs` → `.mts`, `.cjs` → `.cts`.
 
+## A stylesheet resolves differently
+
+`@import 'tailwindcss'` from a `.css` file must not land on the package's JavaScript entry, and
+it used to: the JS conditions matched `import` and esbuild then refused to parse `lib.mjs` as
+CSS. The importer decides the conditions now. A `.css` importer resolves through `style` then
+`default`, and only tries the `.css` extension, so `@import './theme'` cannot pick up
+`theme.tsx` either.
+
+## tsconfig paths
+
+`compilerOptions.paths` is read from `/tsconfig.json` and tried **before** `node_modules`, which
+is the order TypeScript uses. `@/components/button` is how every shadcn/ui project imports, so
+this is close to universal.
+
+The file is JSONC in practice, so comments and trailing commas are stripped before parsing.
+`extends` is not followed: the base config is rarely in the VFS, and guessing would be worse
+than not trying.
+
 ## Hoisting and conflicting versions
 
 `nodeModulesDirs` walks up from the importer's directory to the root building the candidate

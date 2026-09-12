@@ -12,3 +12,4 @@ This is where the **why** lives. What the library does is in the
 | [04 — Bundler](04-bundler.md)                   | esbuild-wasm with no filesystem, and the plugin that binds it |
 | [05 — Installer](05-installer.md)               | npm without npm: the phase 2 plan                             |
 | [06 — Scope and limits](06-scope-and-limits.md) | what the library does not do, and why                         |
+| [07 — The two graphs](07-the-two-graphs.md)     | why the toolchain runs and the application does not           |

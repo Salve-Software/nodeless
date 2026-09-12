@@ -1,82 +1,152 @@
-import { describe, expect, it, vi } from 'vitest';
+import type { Plugin, Vfs } from '@/types/index.js';
+import { describe, expect, it } from 'vitest';
 import { loadFromVfs } from '@/classes/bundler/esbuild-bundler/library/index.js';
+import { PluginContainer } from '@/classes/plugin/index.js';
+import { NodeResolver } from '@/classes/resolver/index.js';
 import { MemoryVfs } from '@/classes/vfs/index.js';
 import { bytesToText } from '@/library/index.js';
 
 const files = {
-  '/src/a.css': 'body { color: red; }',
-  '/src/a.module.css': '.x { color: red; }',
-  '/src/a.ts': 'export const x = 1;',
+  '/src/app.css': '.a { color: red; }',
+  '/src/main.ts': 'export const x = 1;',
+  '/src/logo.svg': '<svg />',
+  '/src/data.json': '{"a":1}',
 };
 
-function contentsOf(result: { contents?: string | Uint8Array }): string {
-  const { contents } = result;
+function load(path: string, plugins: Plugin[] = []) {
+  const vfs: Vfs = new MemoryVfs({ files });
+  const resolver = new NodeResolver({ vfs });
+  const container = new PluginContainer({
+    vfs,
+    plugins,
+    resolve: (source, importer) => {
+      try {
+        const found = resolver.resolve({ specifier: source, importer });
 
+        return found.kind === 'file' ? found.path : undefined;
+      } catch {
+        return undefined;
+      }
+    },
+  });
+
+  return loadFromVfs({ vfs, container }, path);
+}
+
+function asText(contents: string | Uint8Array | undefined): string {
   return typeof contents === 'string'
     ? contents
     : bytesToText(contents ?? new Uint8Array());
 }
 
-describe('loadFromVfs', () => {
-  it('reads the file and picks its loader', async () => {
-    const result = await loadFromVfs({ vfs: new MemoryVfs({ files }) }, '/src/a.ts');
+describe('loadFromVfs without plugins', () => {
+  it('reads the file and picks the loader from its extension', async () => {
+    const result = await load('/src/main.ts');
 
     expect(result.loader).toBe('ts');
-    expect(contentsOf(result)).toBe('export const x = 1;');
-    expect(result.resolveDir).toBe('/src');
+    expect(asText(result.contents)).toBe('export const x = 1;');
   });
 
-  it('runs the css transform over a stylesheet', async () => {
-    const cssTransform = vi.fn(({ css }: { css: string }) => css.replace('red', 'blue'));
-    const vfs = new MemoryVfs({ files });
-    const result = await loadFromVfs({ vfs, cssTransform }, '/src/a.css');
-
-    expect(contentsOf(result)).toBe('body { color: blue; }');
-    expect(cssTransform).toHaveBeenCalledWith({
-      path: '/src/a.css',
-      css: 'body { color: red; }',
-      vfs,
-    });
+  it('reports the containing directory, which esbuild needs to resolve from', async () => {
+    expect((await load('/src/main.ts')).resolveDir).toBe('/src');
   });
 
-  // Tailwind scans the sources for class names, so it needs more than the stylesheet.
-  it('hands the transform the whole vfs', async () => {
-    const result = await loadFromVfs(
+  it('leaves an asset as bytes rather than decoding it', async () => {
+    expect((await load('/src/logo.svg')).loader).toBe('dataurl');
+  });
+});
+
+describe('loadFromVfs with plugins', () => {
+  it('lets transform rewrite the file', async () => {
+    const result = await load('/src/app.css', [
+      { name: 'a', transform: (code) => code.replace('red', 'blue') },
+    ]);
+
+    expect(asText(result.contents)).toContain('blue');
+  });
+
+  it('lets a plugin change the loader, which is how scss becomes css', async () => {
+    const result = await load('/src/main.ts', [
+      { name: 'a', transform: (code) => ({ code, loader: 'css' }) },
+    ]);
+
+    expect(result.loader).toBe('css');
+  });
+
+  it('lets load replace the source before transform sees it', async () => {
+    const result = await load('/src/main.ts', [
+      { name: 'a', load: () => 'export const x = 2;' },
+      { name: 'b', transform: (code) => code.replace('2', '3') },
+    ]);
+
+    expect(asText(result.contents)).toBe('export const x = 3;');
+  });
+
+  it('hands the plugin the whole VFS', async () => {
+    let seen = '';
+
+    await load('/src/main.ts', [
       {
-        vfs: new MemoryVfs({ files }),
-        cssTransform: ({ vfs }) => `/* ${String(vfs.paths().length)} files */`,
+        name: 'a',
+        transform(code) {
+          seen = this.vfs.readText('/src/app.css');
+
+          return code;
+        },
       },
-      '/src/a.css',
-    );
+    ]);
 
-    expect(contentsOf(result)).toBe('/* 3 files */');
+    expect(seen).toBe('.a { color: red; }');
   });
 
-  // Tailwind on a CSS module is ordinary; the transform has to run before scoping.
-  it('runs the css transform over a css module too', async () => {
-    const result = await loadFromVfs(
-      { vfs: new MemoryVfs({ files }), cssTransform: () => '.x { color: blue; }' },
-      '/src/a.module.css',
-    );
+  it('hands the plugin a resolver rooted at the file', async () => {
+    let seen: string | undefined;
 
-    expect(result.loader).toBe('local-css');
-    expect(contentsOf(result)).toBe('.x { color: blue; }');
+    await load('/src/main.ts', [
+      {
+        name: 'a',
+        transform(code, id) {
+          seen = this.resolve('./app.css', id);
+
+          return code;
+        },
+      },
+    ]);
+
+    expect(seen).toBe('/src/app.css');
   });
 
-  it('leaves everything that is not a stylesheet alone', async () => {
-    const cssTransform = vi.fn(() => 'never');
+  it('resolving something that does not exist gives undefined, not a throw', async () => {
+    let seen: string | undefined = 'unset';
 
-    await loadFromVfs({ vfs: new MemoryVfs({ files }), cssTransform }, '/src/a.ts');
+    await load('/src/main.ts', [
+      {
+        name: 'a',
+        transform(code, id) {
+          seen = this.resolve('./gone.css', id);
 
-    expect(cssTransform).not.toHaveBeenCalled();
+          return code;
+        },
+      },
+    ]);
+
+    expect(seen).toBeUndefined();
   });
 
-  it('awaits an async transform', async () => {
-    const result = await loadFromVfs(
-      { vfs: new MemoryVfs({ files }), cssTransform: async () => 'done' },
-      '/src/a.css',
-    );
+  it('leaves an asset alone: a plugin never sees binary content', async () => {
+    let called = false;
 
-    expect(contentsOf(result)).toBe('done');
+    await load('/src/logo.svg', [
+      {
+        name: 'a',
+        transform: (code) => {
+          called = true;
+
+          return code;
+        },
+      },
+    ]);
+
+    expect(called).toBe(false);
   });
 });

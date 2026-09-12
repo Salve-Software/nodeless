@@ -49,10 +49,20 @@ jobs:
       - name: Example — install from the registry and build
         run: npm run example:install
 
-      # Proves Tailwind runs through the cssTransform seam without the library
-      # ever depending on tailwindcss or postcss.
-      - name: Example — build with tailwind through the css transform
+      # Proves Tailwind runs as an ordinary plugin, without the library ever
+      # depending on tailwindcss or postcss.
+      - name: Example — build with tailwind as a plugin
         run: npm run example:tailwind
+
+      # The proof that a toolchain costs no code here: the project's own vite.config.ts
+      # is executed, and a plugin of its own reads node:fs and gets the VFS.
+      - name: Example — run a project's vite config
+        run: npm run example:vite
+
+      # The server half of the isolation story: it sets two fake secrets on the process,
+      # then shows a config reading them in-process and failing to from a worker thread.
+      - name: Example — what a config can see of the API process
+        run: npm run example:isolation
 
   browser:
     name: Browser

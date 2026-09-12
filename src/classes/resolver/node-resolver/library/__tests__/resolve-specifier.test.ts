@@ -115,3 +115,77 @@ describe('resolveSpecifier', () => {
     expect(() => resolve('/src/gone.tsx', '')).toThrow(/<entry point>/);
   });
 });
+
+describe('resolveSpecifier, from a stylesheet', () => {
+  const styles = createScope({
+    '/src/index.css': '@import "tailwindcss";',
+    '/src/main.ts': 'x',
+    '/src/theme.css': 'x',
+    '/src/theme.ts': 'x',
+    '/node_modules/tailwindcss/package.json': manifest({
+      name: 'tailwindcss',
+      exports: {
+        '.': { style: './index.css', import: './dist/lib.mjs', require: './dist/lib.js' },
+      },
+    }),
+    '/node_modules/tailwindcss/index.css': '@layer base {}',
+    '/node_modules/tailwindcss/dist/lib.mjs': 'export default 1;',
+  });
+
+  // Without this the resolver hands lib.mjs to the CSS parser, and esbuild refuses it.
+  it('picks the style condition instead of import', () => {
+    expect(
+      resolveSpecifier(styles, { specifier: 'tailwindcss', importer: '/src/index.css' }),
+    ).toEqual({ kind: 'file', path: '/node_modules/tailwindcss/index.css' });
+  });
+
+  it('the same package from JavaScript still resolves to its JavaScript entry', () => {
+    expect(
+      resolveSpecifier(styles, { specifier: 'tailwindcss', importer: '/src/main.ts' }),
+    ).toEqual({ kind: 'file', path: '/node_modules/tailwindcss/dist/lib.mjs' });
+  });
+
+  it('an extensionless relative import resolves to the stylesheet, not the module', () => {
+    expect(
+      resolveSpecifier(styles, { specifier: './theme', importer: '/src/index.css' }),
+    ).toEqual({ kind: 'file', path: '/src/theme.css' });
+  });
+});
+
+describe('resolveSpecifier, tsconfig paths', () => {
+  const aliased = createScope({
+    '/tsconfig.json': '{"compilerOptions":{"paths":{"@/*":["src/*"]}}}',
+    '/src/main.tsx': 'x',
+    '/src/lib/util.ts': 'x',
+    '/src/components/index.ts': 'x',
+    '/node_modules/@/package.json': manifest({ name: '@', main: 'wrong.js' }),
+    '/node_modules/@/wrong.js': 'x',
+  });
+
+  // shadcn/ui imports everything as @/components/..., so this is close to universal now.
+  it('resolves an aliased import to the mapped directory', () => {
+    expect(
+      resolveSpecifier(aliased, { specifier: '@/lib/util', importer: '/src/main.tsx' }),
+    ).toEqual({ kind: 'file', path: '/src/lib/util.ts' });
+  });
+
+  it('an aliased directory resolves through its index', () => {
+    expect(
+      resolveSpecifier(aliased, { specifier: '@/components', importer: '/src/main.tsx' }),
+    ).toEqual({ kind: 'file', path: '/src/components/index.ts' });
+  });
+
+  // TypeScript checks paths before node_modules, and so does every bundler that reads them.
+  it('the alias wins over a package of the same name', () => {
+    expect(
+      resolveSpecifier(aliased, { specifier: '@/lib/util', importer: '/src/main.tsx' })
+        .kind,
+    ).toBe('file');
+  });
+
+  it('an alias pointing at nothing falls through to the normal lookup', () => {
+    expect(() =>
+      resolveSpecifier(aliased, { specifier: '@/missing', importer: '/src/main.tsx' }),
+    ).toThrow(/Cannot resolve "@\/missing"/);
+  });
+});

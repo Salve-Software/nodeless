@@ -1,27 +1,37 @@
 import type { EsbuildBundlerOptions } from './types/index.js';
+import type { PluginContainer } from '@/classes/plugin/index.js';
 import type {
   BuildMessage,
   BuildOptions,
   BuildResult,
   Bundler,
-  CssTransform,
   EsbuildApi,
   Resolver,
   Vfs,
 } from '@/types/index.js';
 import { ROOT_PATH } from '@/constants/index.js';
-import { bytesToText, normalizePath, textToBytes } from '@/library/index.js';
 import {
+  bytesToText,
+  initializeEsbuild,
+  loadEsbuild,
+  normalizePath,
+  textToBytes,
+} from '@/library/index.js';
+import {
+  ASSET_NAMES,
   BUNDLE_NAME,
+  DEFAULT_ASSET_LIMIT,
   DEFAULT_HTML_PATH,
   DEFAULT_OUTDIR,
+  DEFAULT_PUBLIC_DIR,
   DEFAULT_TARGET,
 } from './constants/index.js';
 import {
+  buildImportMetaEnv,
   collectOutputs,
+  collectPublicFiles,
   createVfsPlugin,
-  initializeEsbuild,
-  loadEsbuild,
+  entryNotFound,
   readDependencies,
   renderIndexHtml,
   resolveEntry,
@@ -35,14 +45,14 @@ export class EsbuildBundler implements Bundler {
   private readonly resolver: Resolver;
   private readonly esbuild: EsbuildApi | undefined;
   private readonly wasmURL: string | undefined;
-  private readonly cssTransform: CssTransform | undefined;
+  private readonly container: PluginContainer | undefined;
 
-  constructor({ vfs, resolver, esbuild, wasmURL, cssTransform }: EsbuildBundlerOptions) {
+  constructor({ vfs, resolver, esbuild, wasmURL, container }: EsbuildBundlerOptions) {
     this.vfs = vfs;
     this.resolver = resolver;
     this.esbuild = esbuild;
     this.wasmURL = wasmURL;
-    this.cssTransform = cssTransform;
+    this.container = container;
   }
 
   async build(options: BuildOptions = {}): Promise<BuildResult> {
@@ -65,6 +75,15 @@ export class EsbuildBundler implements Bundler {
     try {
       const api = await this.api();
       const mode = options.mode ?? 'production';
+      const env = buildImportMetaEnv(mode, options.env);
+
+      await this.container?.configResolved({
+        root: ROOT_PATH,
+        mode,
+        entry,
+        outdir,
+        env: options.env ?? {},
+      });
       const result = await api.build({
         entryPoints: { [BUNDLE_NAME]: entry },
         bundle: true,
@@ -76,18 +95,23 @@ export class EsbuildBundler implements Bundler {
         target: options.target ?? DEFAULT_TARGET,
         jsx: 'automatic',
         logLevel: 'silent',
+        assetNames: ASSET_NAMES,
         minify: options.minify ?? mode === 'production',
         sourcemap: (options.sourcemap ?? mode === 'development') ? 'inline' : false,
-        define: { 'process.env.NODE_ENV': JSON.stringify(mode), ...options.define },
+        define: {
+          'process.env.NODE_ENV': JSON.stringify(mode),
+          'import.meta.env': JSON.stringify(env),
+          ...options.define,
+        },
         plugins: [
+          ...(options.plugins ?? []),
           createVfsPlugin({
             vfs: this.vfs,
             resolver: this.resolver,
             external: options.external ?? [],
             warnings,
-            ...(this.cssTransform === undefined
-              ? {}
-              : { cssTransform: this.cssTransform }),
+            ...(this.container === undefined ? {} : { container: this.container }),
+            assetLimit: options.assetLimit ?? DEFAULT_ASSET_LIMIT,
             ...(options.cdn === undefined
               ? {}
               : {
@@ -102,7 +126,11 @@ export class EsbuildBundler implements Bundler {
 
       warnings.push(...result.warnings.map(toBuildMessage));
 
-      const files = collectOutputs(result.outputFiles ?? [], outdir);
+      // public/ first, so a real build output always wins a name collision.
+      const files = {
+        ...collectPublicFiles(this.vfs, options.publicDir ?? DEFAULT_PUBLIC_DIR),
+        ...collectOutputs(result.outputFiles ?? [], outdir),
+      };
 
       files['index.html'] = textToBytes(
         renderIndexHtml(this.htmlTemplate(options.html), {
@@ -141,10 +169,4 @@ export class EsbuildBundler implements Bundler {
 
     return bytes && bytesToText(bytes);
   }
-}
-
-function entryNotFound(entry: string | undefined): string {
-  return entry === undefined
-    ? 'No entry point found. Expected one of src/main.tsx, src/main.ts, src/index.tsx — or pass `entry`.'
-    : `Entry point not found in the virtual filesystem: ${normalizePath(entry)}`;
 }

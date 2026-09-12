@@ -31,6 +31,36 @@ read /package.json → dependencies
 goes does not — otherwise two dependents could both claim the root `node_modules` for different
 versions of the same package, and whichever wrote last would win at random.
 
+## devDependencies are opt-in, and worth naming
+
+A Vite project keeps `tailwindcss` and `@tailwindcss/vite` in `devDependencies`, because there
+they are build tooling rather than runtime dependencies. Installing only `dependencies` leaves
+the CSS with nothing to resolve.
+
+`dev` takes a list for a reason. Measured on a React 18 + Vite + Tailwind v4 manifest:
+
+| `dev`             | packages | time  | VFS     |
+| ----------------- | -------- | ----- | ------- |
+| `false`           | 9        | 1.4 s | 9.0 MB  |
+| `['tailwindcss']` | 10       | 0.9 s | 9.8 MB  |
+| `true`            | 164      | 3.0 s | 64.8 MB |
+
+`true` drags in vite, eslint, typescript and every `@types` package, none of which the code
+being built ever imports. In a browser VFS that is 55 MB of waste to get one package.
+
+## Workspaces
+
+A package listed under `workspaces` lives in the repository, so asking the registry for it gets
+a 404. It is copied out of the VFS instead, and its own dependencies are walked like any other
+package. Its `node_modules` is left behind, since copying that would duplicate the tree.
+
+## One bad package does not sink the rest
+
+An unresolvable package used to abort the whole install, so a single private dependency cost you
+every other one. It becomes a `warnings` entry now, the same as an unsatisfied peer, and the
+build decides whether it was ever needed. A type-only import disappears in the bundle and never
+misses it.
+
 ## Hoisting
 
 Flat, like npm: everything lands in `/node_modules`. When a second dependent asks for a version

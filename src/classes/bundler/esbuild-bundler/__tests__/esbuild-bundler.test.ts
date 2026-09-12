@@ -1,6 +1,7 @@
-import type { BuildResult, FileInput } from '@/types/index.js';
+import type { BuildResult, FileInput, Plugin } from '@/types/index.js';
 import { describe, expect, it } from 'vitest';
 import { EsbuildBundler } from '@/classes/bundler/index.js';
+import { PluginContainer } from '@/classes/plugin/index.js';
 import { NodeResolver } from '@/classes/resolver/index.js';
 import { MemoryVfs } from '@/classes/vfs/index.js';
 import { bytesToText } from '@/library/index.js';
@@ -208,55 +209,131 @@ describe('EsbuildBundler, css modules', () => {
   });
 });
 
-describe('EsbuildBundler, css transform', () => {
-  function bundlerWith(
-    cssTransform: (input: { css: string }) => string | Promise<string>,
-  ) {
-    const vfs = new MemoryVfs({
-      files: {
-        '/src/main.ts': "import './app.css';\nexport const x = 1;",
-        '/src/app.css': '@custom { }',
-      },
-    });
+describe('EsbuildBundler, plugins', () => {
+  function bundlerWith(plugins: Plugin[], files: FileInput): EsbuildBundler {
+    const vfs = new MemoryVfs({ files });
+    const resolver = new NodeResolver({ vfs });
 
-    return new EsbuildBundler({ vfs, resolver: new NodeResolver({ vfs }), cssTransform });
+    return new EsbuildBundler({
+      vfs,
+      resolver,
+      container: new PluginContainer({
+        vfs,
+        plugins,
+        resolve: (source, importer) => {
+          try {
+            const found = resolver.resolve({ specifier: source, importer });
+
+            return found.kind === 'file' ? found.path : undefined;
+          } catch {
+            return undefined;
+          }
+        },
+      }),
+    });
   }
 
-  it('lets a transform rewrite the stylesheet before esbuild parses it', async () => {
-    const result = await bundlerWith(() => 'body { color: red; }').build();
+  const oneStylesheet: FileInput = {
+    '/src/main.ts': "import './app.css';\nexport const x = 1;",
+    '/src/app.css': '@custom { }',
+  };
+
+  it('lets transform rewrite a stylesheet before esbuild parses it', async () => {
+    const result = await bundlerWith(
+      [
+        {
+          name: 'fake',
+          transform: (_code, id) => (id.endsWith('.css') ? 'body { color: red; }' : null),
+        },
+      ],
+      oneStylesheet,
+    ).build();
 
     expect(text(result, 'bundle.css')).toContain('red');
   });
 
   // Tailwind has to see every stylesheet, not just the entry one.
-  it('runs once per stylesheet in the graph', async () => {
+  it('runs transform once per module in the graph', async () => {
     const seen: string[] = [];
-    const vfs = new MemoryVfs({
-      files: {
+    const result = await bundlerWith(
+      [
+        {
+          name: 'spy',
+          transform: (code, id) => {
+            if (id.endsWith('.css')) seen.push(id);
+
+            return null;
+          },
+        },
+      ],
+      {
         '/src/main.ts': "import './a.css';\nimport './b.css';\nexport const x = 1;",
         '/src/a.css': '.a { color: red; }',
         '/src/b.css': '.b { color: blue; }',
       },
-    });
-    const bundler = new EsbuildBundler({
-      vfs,
-      resolver: new NodeResolver({ vfs }),
-      cssTransform: ({ path, css }) => {
-        seen.push(path);
+    ).build();
 
-        return css;
-      },
-    });
-
-    await bundler.build();
-
+    expect(result.ok).toBe(true);
     expect(seen.sort()).toEqual(['/src/a.css', '/src/b.css']);
   });
 
-  it('a transform that throws comes back as a build error, not a crash', async () => {
-    const result = await bundlerWith(() => {
-      throw new Error('postcss blew up');
-    }).build();
+  it('lets resolveId and load stand up a module that is not in the VFS', async () => {
+    const result = await bundlerWith(
+      [
+        {
+          name: 'virtual',
+          resolveId: (source) =>
+            source === 'virtual:config' ? '/virtual-config.js' : null,
+          load: (id) =>
+            id === '/virtual-config.js' ? 'export const flag = "on";' : null,
+        },
+      ],
+      { '/src/main.ts': "export { flag } from 'virtual:config';" },
+    ).build();
+
+    expect(text(result, 'bundle.js')).toContain('on');
+  });
+
+  it('lets a plugin mark a specifier external', async () => {
+    const result = await bundlerWith(
+      [
+        {
+          name: 'ext',
+          resolveId: (source) =>
+            source === 'cdn-only' ? { id: 'https://x/y.js', external: true } : null,
+        },
+      ],
+      { '/src/main.ts': "export { a } from 'cdn-only';" },
+    ).build();
+
+    expect(text(result, 'bundle.js')).toContain('https://x/y.js');
+  });
+
+  it('tells every plugin about the build before any module is read', async () => {
+    const seen: string[] = [];
+
+    await bundlerWith(
+      [{ name: 'config', configResolved: (config) => void seen.push(config.entry) }],
+      oneStylesheet,
+    ).build();
+
+    expect(seen).toEqual(['/src/main.ts']);
+  });
+
+  it('a plugin that throws comes back as a build error, not a crash', async () => {
+    const result = await bundlerWith(
+      [
+        {
+          name: 'boom',
+          transform: (_code, id) => {
+            if (!id.endsWith('.css')) return null;
+
+            throw new Error('postcss blew up');
+          },
+        },
+      ],
+      oneStylesheet,
+    ).build();
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -310,5 +387,67 @@ describe('EsbuildBundler, cdn mode', () => {
 
     expect(result.ok).toBe(true);
     expect(text(result, 'bundle.js')).not.toContain('esm.sh');
+  });
+});
+
+describe('EsbuildBundler, vite parity', () => {
+  it('import.meta.env is substituted instead of being undefined at runtime', async () => {
+    const result = await build(
+      { '/src/main.ts': 'export const m = import.meta.env.MODE;' },
+      { mode: 'development' as const },
+    );
+
+    expect(text(result, 'bundle.js')).toContain('development');
+    expect(text(result, 'bundle.js')).not.toContain('import.meta.env.MODE');
+  });
+
+  it('caller env variables reach the bundle', async () => {
+    const result = await build(
+      { '/src/main.ts': 'export const a = import.meta.env.VITE_API;' },
+      { env: { VITE_API: 'https://x.dev' } },
+    );
+
+    expect(text(result, 'bundle.js')).toContain('https://x.dev');
+  });
+
+  // Vite copies public/ to the dist, and the scaffold HTML links straight into it.
+  it('public/ is copied to the output', async () => {
+    const result = await build({
+      '/src/main.ts': 'export const x = 1;',
+      '/public/favicon.svg': '<svg/>',
+      '/public/img/logo.png': 'bits',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(Object.keys(result.ok ? result.files : {}).sort()).toContain('img/logo.png');
+    expect(text(result, 'favicon.svg')).toBe('<svg/>');
+  });
+
+  it('a build output wins a name collision with public/', async () => {
+    const result = await build({
+      '/src/main.ts': 'export const x = 1;',
+      '/public/index.html': 'FROM PUBLIC',
+    });
+
+    expect(text(result, 'index.html')).not.toBe('FROM PUBLIC');
+  });
+
+  it('a small asset inlines and a large one becomes its own file', async () => {
+    const small = new Uint8Array(100);
+    const large = new Uint8Array(9000).fill(65);
+    const files = {
+      '/src/main.ts':
+        "import a from './small.png';\nimport b from './large.png';\nexport const x = [a, b];",
+      '/src/small.png': small,
+      '/src/large.png': large,
+    };
+    const result = await build(files, { assetLimit: 4096 });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(text(result, 'bundle.js')).toContain('data:image/png;base64');
+    expect(
+      Object.keys(result.files).some((name) => name.startsWith('assets/large-')),
+    ).toBe(true);
   });
 });

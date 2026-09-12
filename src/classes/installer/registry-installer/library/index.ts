@@ -1,4 +1,6 @@
+export * from './expand-workspace-pattern.js';
 export * from './extract-tarball.js';
+export * from './read-package-tree.js';
 export * from './read-pax-path.js';
 export * from './read-tar-size.js';
 export * from './read-tar-string.js';
@@ -15,5 +17,6 @@ export * from './collect-peer-warnings.js';
 export * from './dependencies-of.js';
 export * from './plan-install-dir.js';
 export * from './read-root-dependencies.js';
+export * from './read-workspaces.js';
 export * from './walk-dependencies.js';
 export * from './write-package.js';

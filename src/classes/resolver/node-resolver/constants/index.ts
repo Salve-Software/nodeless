@@ -1,3 +1,7 @@
 export * from './builtin-modules.js';
+export * from './css-conditions.js';
+export * from './css-resolve-extensions.js';
 export * from './resolve-extensions.js';
+export * from './stylesheet-extensions.js';
+export * from './tsconfig-path.js';
 export * from './typescript-rewrites.js';

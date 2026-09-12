@@ -54,3 +54,44 @@ describe('NodeResolver', () => {
     });
   });
 });
+
+describe('NodeResolver, tsconfig paths', () => {
+  const files = {
+    '/tsconfig.json': '{"compilerOptions":{"paths":{"@/*":["src/*"]}}}',
+    '/src/main.tsx': 'x',
+    '/src/lib/util.ts': 'x',
+  };
+
+  it('reads the aliases out of the tsconfig in the VFS', () => {
+    const resolver = new NodeResolver({ vfs: new MemoryVfs({ files }) });
+
+    expect(
+      resolver.resolve({ specifier: '@/lib/util', importer: '/src/main.tsx' }),
+    ).toEqual({
+      kind: 'file',
+      path: '/src/lib/util.ts',
+    });
+  });
+
+  // The tsconfig can be written after the first build, like any other file.
+  it('invalidate picks up a tsconfig added later', () => {
+    const vfs = new MemoryVfs({
+      files: { '/src/main.tsx': 'x', '/src/lib/util.ts': 'x' },
+    });
+    const resolver = new NodeResolver({ vfs });
+
+    expect(() =>
+      resolver.resolve({ specifier: '@/lib/util', importer: '/src/main.tsx' }),
+    ).toThrow();
+
+    vfs.writeFile('/tsconfig.json', files['/tsconfig.json']);
+    resolver.invalidate();
+
+    expect(
+      resolver.resolve({ specifier: '@/lib/util', importer: '/src/main.tsx' }),
+    ).toEqual({
+      kind: 'file',
+      path: '/src/lib/util.ts',
+    });
+  });
+});

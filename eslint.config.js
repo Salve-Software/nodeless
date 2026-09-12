@@ -15,6 +15,7 @@ export default config(
       'example/browser',
       'example/install',
       'example/tailwind',
+      'example/vite',
       'example/node/dist',
     ],
   },
@@ -118,7 +119,56 @@ export default config(
   },
 
   {
-    files: ['src/**/__tests__/**/*.ts', 'example/**/*.ts', '*.config.ts'],
+    // A class file holds the class and nothing else. Documented in code-structure.md, and
+    // enforced here because it had already slipped once: functions belong in `library/`,
+    // where they get a file and a test, and types belong in `types/`.
+    files: ['**/*.class.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Program > FunctionDeclaration',
+          message:
+            'No loose function in a class file. Move it to library/, where it gets its own file and its own test.',
+        },
+        {
+          selector:
+            'Program > ExportNamedDeclaration > FunctionDeclaration, Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type=/FunctionExpression|ArrowFunctionExpression/]',
+          message:
+            'No loose function in a class file. Move it to library/, where it gets its own file and its own test.',
+        },
+        {
+          selector:
+            'Program > TSTypeAliasDeclaration, Program > TSInterfaceDeclaration, Program > ExportNamedDeclaration > TSTypeAliasDeclaration, Program > ExportNamedDeclaration > TSInterfaceDeclaration',
+          message:
+            'No type declared in a class file. Move it to types/, one type per file.',
+        },
+      ],
+    },
+  },
+
+  {
+    // `src/node/` is the deliberate exception to the isomorphism rule: it is the Node-only
+    // entry point, built by its own tsconfig, and `worker_threads` is the whole reason it
+    // exists. Nothing in `src/` may import from it.
+    files: ['src/node/**/*.ts'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+
+  {
+    // The shims mirror Node's own signatures. `Buffer.toString(encoding, start, end)` is
+    // three parameters because that is what the toolchain calls.
+    files: ['src/classes/shims/**/*.ts'],
+    rules: { 'max-params': 'off' },
+  },
+
+  {
+    files: [
+      'src/**/__tests__/**/*.ts',
+      'example/**/*.ts',
+      'scripts/**/*.ts',
+      '*.config.ts',
+    ],
     rules: {
       'no-restricted-imports': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',

@@ -19,6 +19,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./worker": {
+      "types": "./dist/runtime-worker.d.ts",
+      "default": "./dist/runtime-worker.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "default": "./dist/node/index.js"
     }
   },
   "files": [
@@ -46,7 +54,10 @@
     "typescript"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "build": "npm run build:lib && npm run build:node && npm run build:worker",
+    "build:lib": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "build:node": "tsc -p tsconfig.node.json && tsc-alias -p tsconfig.node.json",
+    "build:worker": "tsx scripts/build-worker.ts",
     "typecheck": "tsc --noEmit",
     "typecheck:fast": "tsgo --noEmit",
     "lint": "eslint .",
@@ -58,6 +69,8 @@
     "example": "tsx example/node/build.ts",
     "example:install": "tsx example/node/install.ts",
     "example:tailwind": "tsx example/node/tailwind.ts",
+    "example:vite": "tsx example/node/vite.ts",
+    "example:isolation": "tsx example/node/isolation.ts",
     "playground": "npm run build && tsx example/node/playground.ts",
     "example:browser:test": "npm run build && tsx example/node/browser.ts",
     "prepare": "husky || true"
@@ -67,6 +80,18 @@
     "fflate": "^0.8.3",
     "resolve.exports": "^2.0.3",
     "semver": "^7.8.5"
+  },
+  "peerDependencies": {
+    "sass": "^1.80.0",
+    "tailwindcss": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "sass": {
+      "optional": true
+    },
+    "tailwindcss": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -83,12 +108,12 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.3.0",
     "playwright": "^1.63.0",
-    "postcss": "^8.5.28",
     "prettier": "^3.9.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "sass": "^1.104.0",
     "semantic-release": "^25.0.9",
-    "tailwindcss": "^3.4.19",
+    "tailwindcss": "^4.3.3",
     "tsc-alias": "^1.9.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",

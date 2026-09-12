@@ -1,0 +1,21 @@
+/** Builtins that imply a process. Importing one is fine; calling into it throws. */
+export const UNSUPPORTED_BUILTINS = [
+  'child_process',
+  'cluster',
+  'dgram',
+  'dns',
+  'http',
+  'http2',
+  'https',
+  'inspector',
+  'net',
+  'perf_hooks',
+  'readline',
+  'repl',
+  'tls',
+  'tty',
+  'v8',
+  'vm',
+  'worker_threads',
+  'zlib',
+];

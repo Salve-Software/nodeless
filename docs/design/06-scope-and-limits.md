@@ -3,8 +3,11 @@
 ## What the library does
 
 **Pure-JS dependencies** — React, ReactDOM, UI libraries like Radix and shadcn, utilities — with
-TS, TSX, JS, JSX, plain CSS, CSS modules, JSON and assets as data URLs. PostCSS and Tailwind v3
-plug in through `cssTransform` without becoming dependencies of this package.
+TS, TSX, JS, JSX, plain CSS, CSS modules, Sass, Tailwind, JSON and assets.
+
+**And the project's own toolchain.** A `vite.config.ts` is executed and its plugins run, so a
+framework nodeless has never heard of costs no code here. See
+[`07-the-two-graphs.md`](07-the-two-graphs.md) for why that does not break the premise.
 
 ## What it does not do, and why
 
@@ -14,15 +17,20 @@ plug in through `cssTransform` without becoming dependencies of this package.
 | run `package.json` scripts and `postinstall`     | executing is exactly what the library avoids              |
 | dependencies with native bindings (`.node`)      | they need a process with dlopen — there is none here      |
 | Rolldown, lightningcss, `sharp`, embedded `sass` | all of them depend on a native binary                     |
-| Tailwind v4                                      | depends on lightningcss                                   |
-| CSS modules and React Refresh                    | not implemented yet — phase 4                             |
+| React Refresh                                    | deliberate, see below                                     |
 
 **None of this is a matter of time.** The first three rows follow directly from the premise: if
 the library executed code, it would need isolation, and isolation is precisely the cost it
 exists to remove.
 
-Tailwind v3 through PostCSS in pure JS fits the scope and works today, through the
-`cssTransform` seam rather than as a dependency.
+**Tailwind v4 works two ways now.** The built-in plugin calls `compile(css, { loadStylesheet })`
+— pure JavaScript, reading through a callback a VFS can answer — and feeds it candidates scraped
+out of the VFS, because Tailwind's own scanner is a native binary. That path refuses `@plugin`
+and `@config`.
+
+The other way is to put `@tailwindcss/vite` in the project's config, which goes through the
+runtime and can run those. Which of the two is available depends on whether the integration
+pulls in a native dependency, and that is now a property of the package rather than of nodeless.
 
 **React Refresh is a decision, not a gap.** It needs a Babel-grade transform — `react-refresh`
 ships a Babel plugin, and esbuild does not do that kind of AST work. What it buys is preserved

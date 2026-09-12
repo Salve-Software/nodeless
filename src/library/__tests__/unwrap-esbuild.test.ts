@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { unwrapEsbuild } from '@/classes/bundler/esbuild-bundler/library/index.js';
+import { unwrapEsbuild } from '@/library/index.js';
 
 const api = { build: () => undefined, initialize: () => undefined };
 

@@ -35,3 +35,65 @@ describe('readRootDependencies', () => {
     expect(() => readRootDependencies(vfs)).toThrow(InstallError);
   });
 });
+
+describe('readRootDependencies, devDependencies', () => {
+  const manifest = {
+    dependencies: { react: '^19.0.0' },
+    devDependencies: { tailwindcss: '^4.0.0' },
+  };
+
+  it('are left out by default', () => {
+    expect(readRootDependencies(vfsWith(manifest)).map((r) => r.name)).toEqual(['react']);
+  });
+
+  // A Vite project keeps its CSS toolchain there, and the CSS cannot resolve without it.
+  it('come in when dev is set', () => {
+    expect(
+      readRootDependencies(vfsWith(manifest), { dev: true })
+        .map((r) => r.name)
+        .sort(),
+    ).toEqual(['react', 'tailwindcss']);
+  });
+
+  it('a dependency wins over a devDependency of the same name', () => {
+    const both = { dependencies: { p: '^2.0.0' }, devDependencies: { p: '^1.0.0' } };
+
+    expect(readRootDependencies(vfsWith(both), { dev: true })[0]?.range).toBe('^2.0.0');
+  });
+});
+
+describe('readRootDependencies, picking devDependencies by name', () => {
+  const manifest = {
+    dependencies: { react: '^19.0.0' },
+    devDependencies: { tailwindcss: '^4.0.0', vite: '^6.0.0', eslint: '^9.0.0' },
+  };
+
+  // `dev: true` on a real Vite project is 165 packages to get one of them.
+  it('a list takes only what it names', () => {
+    expect(
+      readRootDependencies(vfsWith(manifest), { dev: ['tailwindcss'] })
+        .map((r) => r.name)
+        .sort(),
+    ).toEqual(['react', 'tailwindcss']);
+  });
+
+  it('a name that is not a devDependency is ignored', () => {
+    expect(
+      readRootDependencies(vfsWith(manifest), { dev: ['nope'] }).map((r) => r.name),
+    ).toEqual(['react']);
+  });
+
+  it('an empty list is the same as not asking', () => {
+    expect(
+      readRootDependencies(vfsWith(manifest), { dev: [] }).map((r) => r.name),
+    ).toEqual(['react']);
+  });
+
+  it('the range comes from the devDependencies entry', () => {
+    expect(
+      readRootDependencies(vfsWith(manifest), { dev: ['vite'] }).find(
+        (r) => r.name === 'vite',
+      )?.range,
+    ).toBe('^6.0.0');
+  });
+});

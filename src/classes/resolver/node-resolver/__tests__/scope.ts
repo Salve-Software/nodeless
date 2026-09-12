@@ -1,6 +1,10 @@
 import type { ResolveScope } from '@/classes/resolver/node-resolver/types/index.js';
 import type { FileInput } from '@/types/index.js';
-import { readManifest } from '@/classes/resolver/node-resolver/library/index.js';
+import { RESOLVE_EXTENSIONS } from '@/classes/resolver/node-resolver/constants/index.js';
+import {
+  readManifest,
+  readTsconfigPaths,
+} from '@/classes/resolver/node-resolver/library/index.js';
 import { MemoryVfs } from '@/classes/vfs/index.js';
 import { DEFAULT_CONDITIONS } from '@/constants/index.js';
 
@@ -11,7 +15,13 @@ export function createScope(
 ): ResolveScope {
   const vfs = new MemoryVfs({ files });
 
-  return { vfs, conditions, readManifest: (dir) => readManifest(vfs, dir) };
+  return {
+    vfs,
+    conditions,
+    extensions: RESOLVE_EXTENSIONS,
+    paths: readTsconfigPaths(vfs),
+    readManifest: (dir) => readManifest(vfs, dir),
+  };
 }
 
 export function manifest(content: Record<string, unknown>): string {

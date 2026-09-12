@@ -15,12 +15,15 @@ import { loadAsDirectory } from './load-as-directory.js';
 import { loadAsFile } from './load-as-file.js';
 import { nodeModulesDirs } from './node-modules-dirs.js';
 import { resolveInPackage } from './resolve-in-package.js';
+import { resolveTsconfigPath } from './resolve-tsconfig-path.js';
+import { scopeForImporter } from './scope-for-importer.js';
 
 /** Node's resolution algorithm over the VFS. Synchronous, because the VFS is. */
 export function resolveSpecifier(
-  scope: ResolveScope,
+  outerScope: ResolveScope,
   { specifier, importer }: ResolveRequest,
 ): ResolveResult {
+  const scope = scopeForImporter(outerScope, importer);
   const fromDir = importer === '' ? ROOT_PATH : dirname(importer);
 
   if (isRelativeSpecifier(specifier) || specifier.startsWith('/')) {
@@ -57,6 +60,11 @@ export function resolveSpecifier(
   }
 
   const wanted = alias?.kind === 'redirect' ? alias.specifier : specifier;
+  // TypeScript resolves paths before node_modules, and so does every bundler that reads them.
+  const aliased = resolveTsconfigPath(scope, wanted);
+
+  if (aliased !== undefined) return overrideFile(scope, aliased);
+
   const { name, subpath } = parseSpecifier(wanted);
 
   for (const dir of nodeModulesDirs(fromDir)) {

@@ -2,19 +2,21 @@
 
 ## Commands
 
-| Command                           | What it does                                           |
-| --------------------------------- | ------------------------------------------------------ |
-| `npm run build`                   | compiles through `tsconfig.build.json` (`src/` only)   |
-| `npm run typecheck`               | `tsc --noEmit`                                         |
-| `npm run typecheck:fast`          | `tsgo --noEmit`, a local accelerator                   |
-| `npm run lint` / `lint:fix`       | ESLint                                                 |
-| `npm run format` / `format:check` | Prettier                                               |
-| `npm test` / `test:watch`         | Vitest                                                 |
-| `npm run example`                 | builds `example/app` in Node, offline                  |
-| `npm run example:install`         | installs from the real registry and builds the result  |
-| `npm run example:tailwind`        | builds a Tailwind v3 project through the css transform |
-| `npm run playground`              | opens the editor-and-preview page in your browser      |
-| `npm run example:browser:test`    | drives that page headless and asserts it really works  |
+| Command                           | What it does                                                    |
+| --------------------------------- | --------------------------------------------------------------- |
+| `npm run build`                   | compiles through `tsconfig.build.json`, then bundles the worker |
+| `npm run build:worker`            | bundles `dist/runtime-worker.js` self-contained                 |
+| `npm run typecheck`               | `tsc --noEmit`                                                  |
+| `npm run typecheck:fast`          | `tsgo --noEmit`, a local accelerator                            |
+| `npm run lint` / `lint:fix`       | ESLint                                                          |
+| `npm run format` / `format:check` | Prettier                                                        |
+| `npm test` / `test:watch`         | Vitest                                                          |
+| `npm run example`                 | builds `example/app` in Node, offline                           |
+| `npm run example:install`         | installs from the real registry and builds the result           |
+| `npm run example:tailwind`        | builds a Tailwind v4 project with no configuration              |
+| `npm run example:vite`            | runs a project's own `vite.config.ts` and its plugins           |
+| `npm run playground`              | opens the editor-and-preview page in your browser               |
+| `npm run example:browser:test`    | drives that page headless and asserts it really works           |
 
 ## Two tsconfigs, and the second one is a guard
 
@@ -28,6 +30,10 @@ the artifact published there.
 
 The second guard is ESLint's `no-restricted-imports`, relaxed only in `__tests__/`, `example/`
 and `*.config.ts`.
+
+**The example projects are excluded from both.** `example/app`, `example/vite` and the rest are
+_input_ to the library — they are built by nodeless, not compiled by tsc — so they are in
+`tsconfig.json`'s `exclude` and ESLint's `ignores`. A `.ts` file in one of them is a fixture.
 
 **Two options that change how the code gets written:**
 
@@ -66,7 +72,8 @@ directly by the browser in `example/browser`, with no bundler to patch it up.
 ## The dist has to stay clean
 
 After `npm run build`, `dist/` may hold exactly four bare imports: `esbuild-wasm`,
-`resolve.exports`, `semver` and `fflate`. That is what lets the browser page resolve everything
+`resolve.exports`, `semver` and `fflate`. **`dist/runtime-worker.js` may hold none**: it is
+bundled by `build:worker`, which fails if one survives, because a blob Worker has no import map. That is what lets the browser page resolve everything
 through an import map with no bundling step.
 
 ```bash
@@ -84,6 +91,13 @@ width are adjusted **in `.prettierrc.json`**, never in ESLint.
 The rules that back the structure rules: `max-params: 2`, `member-ordering`,
 `consistent-type-imports`, `import-x/order` with the `type` group on top, `../` banned by regex,
 and `no-restricted-imports` over Node builtins.
+
+Plus `no-restricted-syntax` over `**/*.class.ts`, which is what makes "a class file holds the
+class and nothing else" a guard instead of a convention.
+
+Two documented relaxations: `max-params` is off under `src/classes/shims/`, which mirrors Node's
+signatures, and `no-implied-eval` is disabled on the single `new Function` line in
+`evaluate-module.ts`.
 
 ## Husky
 

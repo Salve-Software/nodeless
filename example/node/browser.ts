@@ -33,7 +33,22 @@ const preview = page.frameLocator('#preview');
 await preview.locator('h1').waitFor({ timeout: 30_000 });
 console.log(`  iframe rendered: "${await preview.locator('h1').innerText()}"`);
 
-// 4. The rendered app is live, not a static string: React state updates on click.
+// 4. The project's own vite.config.ts ran — in the browser. Each half of this line can
+// only be there because the config was executed: a virtual module with no file behind it,
+// and a `define` whose value the config read out of /package.json through `node:fs`.
+const stamp = (await preview.locator('.stamp').innerText()).trim();
+
+if (!stamp.includes('a vite config, run in your browser')) {
+  failures.push(`the config's virtual module did not reach the bundle: "${stamp}"`);
+} else if (!stamp.includes('project playground')) {
+  failures.push(`the config's define did not reach the bundle: "${stamp}"`);
+} else if (!stamp.includes('evaluated in a worker')) {
+  failures.push(`the config ran on the page instead of in the worker: "${stamp}"`);
+} else {
+  console.log(`  vite config ran in the browser: "${stamp}"`);
+}
+
+// 5. The rendered app is live, not a static string: React state updates on click.
 const button = preview.locator('button');
 
 await button.click();
@@ -49,7 +64,7 @@ if (process.env['SCREENSHOT'] === '1') {
   console.log('  screenshot refreshed');
 }
 
-// 5. Editing a source rebuilds in the browser and the iframe picks it up.
+// 6. Editing a source rebuilds in the browser and the iframe picks it up.
 await page.locator('.cm-content').click();
 await page.keyboard.press('ControlOrMeta+a');
 await page.keyboard.insertText(
@@ -61,7 +76,7 @@ await page
   .waitFor({ timeout: 60_000 });
 console.log('  edit rebuilt and re-rendered');
 
-// 6. A broken edit comes back as a structured diagnostic instead of a blank page.
+// 7. A broken edit comes back as a structured diagnostic instead of a blank page.
 await page.locator('.cm-content').click();
 await page.keyboard.press('ControlOrMeta+a');
 await page.keyboard.insertText('export function App() { return <h1>oops</h1>; ');
