@@ -21,7 +21,7 @@ import { ConfigLoader } from '@/classes/config/index.js';
 import { RegistryInstaller } from '@/classes/installer/index.js';
 import { PluginContainer } from '@/classes/plugin/index.js';
 import { NodeResolver } from '@/classes/resolver/index.js';
-import { ModuleRuntime } from '@/classes/runtime/index.js';
+import { ModuleRuntime, WorkerRuntime } from '@/classes/runtime/index.js';
 import { RUNTIME_CONDITIONS } from '@/classes/runtime/module-runtime/constants/index.js';
 import { MemoryVfs } from '@/classes/vfs/index.js';
 import { DEFAULT_CONDITIONS, DEFAULT_DEBOUNCE_MS } from '@/constants/index.js';
@@ -114,12 +114,25 @@ export class NodelessProject {
     await this.bundler?.dispose();
   }
 
+  /**
+   * `worker` is the hardened one: the toolchain runs off the page, with no DOM, no storage
+   * and no network. The default stays in-process because it is the half that is isomorphic.
+   */
   private createRuntime(): Runtime {
-    return new ModuleRuntime({
+    const { esbuild, wasmURL, workerUrl, isolation = 'none' } = this.options;
+    const shared = {
       vfs: this.vfs,
       resolver: new NodeResolver({ vfs: this.vfs, conditions: RUNTIME_CONDITIONS }),
-      ...(this.options.esbuild === undefined ? {} : { esbuild: this.options.esbuild }),
-      ...(this.options.wasmURL === undefined ? {} : { wasmURL: this.options.wasmURL }),
+      ...(esbuild === undefined ? {} : { esbuild }),
+      ...(wasmURL === undefined ? {} : { wasmURL }),
+    };
+
+    if (isolation === 'none') return new ModuleRuntime(shared);
+
+    return new WorkerRuntime({
+      ...shared,
+      conditions: RUNTIME_CONDITIONS,
+      ...(workerUrl === undefined ? {} : { workerUrl }),
     });
   }
 

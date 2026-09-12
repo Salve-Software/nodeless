@@ -2,6 +2,7 @@ import type { Bundler } from './bundler.js';
 import type { EsbuildApi } from './esbuild-api.js';
 import type { FileInput } from './file-input.js';
 import type { Installer } from './installer.js';
+import type { IsolationMode } from './isolation-mode.js';
 import type { PackageCache } from './package-cache.js';
 import type { Plugin } from './plugin.js';
 import type { Runtime } from './runtime.js';
@@ -16,6 +17,10 @@ export interface NodelessProjectOptions {
   bundler?: Bundler;
   installer?: Installer;
   runtime?: Runtime;
+  /** Defaults to `none`. `worker` runs the config graph off the page, and needs a browser. */
+  isolation?: IsolationMode;
+  /** Only read when `isolation` is `worker`, and only when the default URL is wrong. */
+  workerUrl?: string;
   conditions?: string[];
   wasmURL?: string;
   esbuild?: EsbuildApi;
