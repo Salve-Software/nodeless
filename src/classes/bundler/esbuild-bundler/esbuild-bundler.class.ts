@@ -31,6 +31,7 @@ import {
   collectOutputs,
   collectPublicFiles,
   createVfsPlugin,
+  entryNotFound,
   readDependencies,
   renderIndexHtml,
   resolveEntry,
@@ -168,10 +169,4 @@ export class EsbuildBundler implements Bundler {
 
     return bytes && bytesToText(bytes);
   }
-}
-
-function entryNotFound(entry: string | undefined): string {
-  return entry === undefined
-    ? 'No entry point found. Expected one of src/main.tsx, src/main.ts, src/index.tsx — or pass `entry`.'
-    : `Entry point not found in the virtual filesystem: ${normalizePath(entry)}`;
 }

@@ -3,6 +3,7 @@ export * from './cdn-specifier.js';
 export * from './collect-outputs.js';
 export * from './collect-public-files.js';
 export * from './create-vfs-plugin.js';
+export * from './entry-not-found.js';
 export * from './inline-or-emit.js';
 export * from './is-bare-specifier.js';
 export * from './is-external-specifier.js';
