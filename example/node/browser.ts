@@ -42,6 +42,8 @@ if (!stamp.includes('a vite config, run in your browser')) {
   failures.push(`the config's virtual module did not reach the bundle: "${stamp}"`);
 } else if (!stamp.includes('project playground')) {
   failures.push(`the config's define did not reach the bundle: "${stamp}"`);
+} else if (!stamp.includes('evaluated in a worker')) {
+  failures.push(`the config ran on the page instead of in the worker: "${stamp}"`);
 } else {
   console.log(`  vite config ran in the browser: "${stamp}"`);
 }

@@ -48,6 +48,9 @@ const [
 const project = new NodelessProject({
   files: STARTER,
   wasmURL: `https://unpkg.com/esbuild-wasm@${esbuild.version}/esbuild.wasm`,
+  // The project's own config is third-party code the moment anyone else edits it, so it
+  // runs off the page: no DOM, no storage, no network.
+  isolation: 'worker',
 });
 
 let current = FILES[0];

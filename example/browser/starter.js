@@ -21,6 +21,9 @@ export default ({ mode }: { mode: string }) => ({
   define: {
     __PROJECT__: JSON.stringify(manifest.name),
     __MODE__: JSON.stringify(mode),
+    // \`document\` exists on the page and not in a Worker, so this reports where the
+    // config itself was evaluated.
+    __ISOLATION__: JSON.stringify(typeof document === 'undefined' ? 'a worker' : 'the page'),
   },
   plugins: [
     {
@@ -88,7 +91,7 @@ export function App() {
       </button>
 
       <p className="stamp">
-        {builtBy} — project {__PROJECT__}, mode {__MODE__}
+        {builtBy} — project {__PROJECT__}, mode {__MODE__}, evaluated in {__ISOLATION__}
       </p>
 
       <small>Edit this file and hit Build.</small>
