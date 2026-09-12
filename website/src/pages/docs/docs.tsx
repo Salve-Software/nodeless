@@ -11,6 +11,18 @@ export function Docs() {
 
   useEffect(() => {
     const onScroll = (): void => {
+      const last = sections[sections.length - 1];
+      const atBottom =
+        window.scrollY + window.innerHeight >= document.body.scrollHeight - 8;
+
+      // The last section is short and its top never crosses the trigger line, so the
+      // bottom of the page counts as reaching it.
+      if (atBottom && last) {
+        setActive(last.id);
+
+        return;
+      }
+
       const passed = sections.filter((section) => {
         const node = document.getElementById(section.id);
 

@@ -66,9 +66,12 @@
   max-width: 50ch;
 }
 
+/*
+ * No `scroll-margin-top` here: `html` already carries `scroll-padding-top` for the fixed
+ * nav, and the two add up, which parks a clicked section twice as far down as intended.
+ */
 .docs__section {
   padding-top: var(--gap-5);
-  scroll-margin-top: 6rem;
 }
 
 .docs__section h2 {
