@@ -49,8 +49,12 @@ a {
 code,
 pre {
   font-family: var(--font-mono);
-  font-size: 0.86em;
   font-variant-ligatures: none;
+}
+
+/* Only inline code steps down. A `code` inside a `pre` would step down twice. */
+:not(pre) > code {
+  font-size: 0.86em;
 }
 
 button {

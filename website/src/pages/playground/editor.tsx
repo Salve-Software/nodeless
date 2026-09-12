@@ -38,6 +38,7 @@ export function Editor({
         ref={input}
         value={value}
         spellCheck={false}
+        wrap="off"
         autoCapitalize="off"
         autoCorrect="off"
         onChange={(event) => onChange(event.target.value)}

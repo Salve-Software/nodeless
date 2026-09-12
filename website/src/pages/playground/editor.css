@@ -5,6 +5,11 @@
   background: var(--code-bg);
 }
 
+/*
+ * Every metric has to match or the caret lands somewhere other than the glyph under the
+ * pointer. Two of them bit: the `code, pre` rule turns ligatures off and never reaches a
+ * textarea, and italic comments are wider than upright ones.
+ */
 .editor__view,
 .editor__input {
   margin: 0;
@@ -12,10 +17,20 @@
   font-family: var(--font-mono);
   font-size: 0.78rem;
   line-height: 1.7;
+  letter-spacing: normal;
+  word-spacing: 0;
   tab-size: 2;
   white-space: pre;
   overflow: auto;
   border: none;
+  font-variant-ligatures: none;
+  font-feature-settings: normal;
+  font-kerning: none;
+  text-rendering: optimizeSpeed;
+}
+
+.editor .tok--comment {
+  font-style: normal;
 }
 
 .editor__view {
