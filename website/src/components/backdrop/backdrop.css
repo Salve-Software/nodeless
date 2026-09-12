@@ -1,0 +1,57 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.backdrop__grid {
+  position: absolute;
+  inset: -2px;
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 68px 68px;
+  mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 20%, transparent 78%);
+}
+
+.backdrop__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  will-change: transform;
+}
+
+.backdrop__glow--a {
+  width: 46vw;
+  height: 46vw;
+  top: -16vw;
+  left: 4vw;
+  background: var(--glow-a);
+  animation: drift 26s var(--ease-soft) infinite;
+}
+
+.backdrop__glow--b {
+  width: 38vw;
+  height: 38vw;
+  top: -6vw;
+  right: 2vw;
+  background: var(--glow-b);
+  animation: drift 32s var(--ease-soft) infinite reverse;
+}
+
+.backdrop__glow--c {
+  width: 34vw;
+  height: 34vw;
+  top: 42vw;
+  left: 38vw;
+  background: var(--glow-c);
+  animation: drift 38s var(--ease-soft) infinite;
+}
+
+.backdrop__fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, var(--bg) 92%);
+}

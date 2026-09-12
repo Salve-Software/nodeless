@@ -1,0 +1,169 @@
+.docs {
+  padding-block: 7.5rem var(--gap-6);
+}
+
+.docs__inner {
+  display: grid;
+  gap: var(--gap-5);
+}
+
+.docs__aside {
+  display: none;
+}
+
+.docs__aside nav {
+  position: sticky;
+  top: 6.5rem;
+}
+
+.docs__aside h2 {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-weight: 500;
+  margin-bottom: var(--gap-2);
+}
+
+.docs__aside ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.1rem;
+  border-left: 1px solid var(--border);
+}
+
+.docs__aside a {
+  display: block;
+  padding: 0.32rem 0 0.32rem 0.9rem;
+  margin-left: -1px;
+  border-left: 1px solid transparent;
+  font-size: var(--step--1);
+  color: var(--text-dim);
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.docs__aside a:hover {
+  color: var(--text-muted);
+}
+
+.docs__aside a[data-on='true'] {
+  color: var(--accent);
+  border-left-color: var(--accent);
+}
+
+.docs__head h1 {
+  font-size: var(--step-3);
+}
+
+.docs__head p {
+  margin-top: var(--gap-2);
+  color: var(--text-muted);
+  font-size: var(--step-1);
+  max-width: 50ch;
+}
+
+/*
+ * No `scroll-margin-top` here: `html` already carries `scroll-padding-top` for the fixed
+ * nav, and the two add up, which parks a clicked section twice as far down as intended.
+ */
+.docs__section {
+  padding-top: var(--gap-5);
+}
+
+.docs__section h2 {
+  position: relative;
+  font-size: var(--step-2);
+  margin-bottom: var(--gap-2);
+}
+
+.docs__section h2 a {
+  position: absolute;
+  left: -1.2rem;
+  color: var(--text-dim);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.docs__section h2:hover a {
+  opacity: 1;
+}
+
+.docs__section > p {
+  color: var(--text-muted);
+  max-width: 62ch;
+  margin-bottom: var(--gap-3);
+}
+
+.docs__table {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.docs__table > div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.4fr) 1fr;
+  gap: var(--gap-3);
+  padding: 0.6rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--step--1);
+}
+
+.docs__table > div:last-child {
+  border-bottom: none;
+}
+
+.docs__table code {
+  color: var(--accent);
+}
+
+.docs__table span {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.docs__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: var(--gap-5);
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.docs__more svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.25s var(--ease);
+}
+
+.docs__more:hover svg {
+  transform: translateX(3px);
+}
+
+@media (width >= 60rem) {
+  .docs__inner {
+    grid-template-columns: 13rem 1fr;
+    gap: var(--gap-5);
+  }
+
+  .docs__aside {
+    display: block;
+  }
+
+  .docs__body {
+    max-width: 46rem;
+  }
+}

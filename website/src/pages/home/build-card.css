@@ -1,0 +1,247 @@
+.card {
+  position: relative;
+  background: linear-gradient(165deg, var(--surface) 0%, var(--bg-raised) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: float 9s var(--ease-soft) infinite;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, var(--sheen) 45%, transparent 60%);
+  pointer-events: none;
+}
+
+.card__chrome {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-3);
+  padding: 0.8rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.card__dots {
+  display: inline-flex;
+  gap: 0.36rem;
+}
+
+.card__dots i {
+  width: 0.58rem;
+  height: 0.58rem;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.card__title {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--text-dim);
+  margin-right: auto;
+}
+
+.card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent);
+  padding: 0.2rem 0.55rem;
+  border: 1px solid color-mix(in oklab, var(--accent) 30%, transparent);
+  border-radius: 999px;
+}
+
+.card__pip {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse-ring 2.4s infinite;
+}
+
+.card__body {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--gap-2);
+  padding: 1.2rem 1.1rem 1rem;
+}
+
+.card__label {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-weight: 500;
+  margin-bottom: 0.7rem;
+}
+
+.card__side--out {
+  text-align: right;
+}
+
+.card__list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.42rem;
+}
+
+.card__list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  animation: slide-left 0.5s var(--ease) backwards;
+  animation-delay: calc(0.25s + var(--i) * 0.09s);
+}
+
+.card__side--out .card__list li {
+  justify-content: flex-end;
+}
+
+.card__list em {
+  font-style: normal;
+  color: var(--text-dim);
+  font-size: 0.68rem;
+}
+
+.card__chip {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 2px;
+  flex: none;
+}
+
+.card__chip--json {
+  background: var(--warn);
+}
+.card__chip--config {
+  background: var(--runs);
+}
+.card__chip--tsx {
+  background: var(--info);
+}
+.card__chip--css {
+  background: var(--salve-green);
+}
+.card__chip--out {
+  background: var(--accent);
+}
+
+.card__flow {
+  position: relative;
+  width: 2.75rem;
+}
+
+.card__beam {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--border-strong) 25%,
+    var(--border-strong) 75%,
+    transparent
+  );
+}
+
+.card__spark {
+  position: absolute;
+  top: 50%;
+  width: 0.42rem;
+  height: 0.42rem;
+  margin-top: -0.21rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px 2px color-mix(in oklab, var(--accent) 60%, transparent);
+  animation: beam 2.6s var(--ease-soft) infinite;
+}
+
+@keyframes beam {
+  0% {
+    left: -6%;
+    opacity: 0;
+  }
+  15%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+.card__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-3);
+  padding: 0.75rem 1.1rem 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+.card__meter {
+  flex: 1;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.card__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--salve-green));
+  transform-origin: left;
+  animation: fill 1.4s var(--ease) forwards;
+}
+
+@keyframes fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.card__time {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.card__time strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+@media (width < 30rem) {
+  .card__body {
+    grid-template-columns: 1fr;
+  }
+
+  .card__flow {
+    width: auto;
+    height: 1.75rem;
+  }
+
+  .card__side--out,
+  .card__side--out .card__list li {
+    text-align: left;
+    justify-content: flex-start;
+  }
+}

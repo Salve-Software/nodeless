@@ -1,4 +1,9 @@
-<h1 align="center">nodeless</h1>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo/nodeless-lockup-dark.svg">
+    <img src="./assets/logo/nodeless-lockup-light.svg" alt="nodeless" width="210">
+  </picture>
+</p>
 
 <p align="center">
   <strong>npm install and a frontend build, in-process</strong>
@@ -13,14 +18,16 @@
 </p>
 
 Give it a map of files. It installs the dependencies from npm, runs the project's own
-`vite.config.ts` and its plugins, and hands back `index.html`, `bundle.js` and `bundle.css` —
-all in memory and in the same process. No shell, no filesystem, no child process, no VM.
+`vite.config.ts` and its plugins, and hands back `index.html`, `bundle.js` and `bundle.css`.
+All in memory, in the same process. No shell, no filesystem, no child process, no VM.
 
-It works because a project has two module graphs and they are disjoint. The **application**
-graph — your `src/` and the packages it imports — is read as text and never executed, because
-resolving an import and transpiling TSX do not run anything. The **config** graph — your
-`vite.config.ts` and the plugins it imports — is executed, in a sandbox where `node:fs` is the
-virtual filesystem and there is no disk to reach.
+It works because a project has two module graphs and they are disjoint.
+
+The **application** graph is your `src/` and the packages it imports. It is read as text and
+never executed, because resolving an import and transpiling TSX do not run anything.
+
+The **config** graph is your `vite.config.ts` and the plugins it imports. That one is executed,
+in a sandbox where `node:fs` is the virtual filesystem and there is no disk to reach.
 
 That second part is why a toolchain nodeless has never heard of costs no code here.
 
@@ -108,8 +115,8 @@ the way TypeScript would. `resolve.alias` from the config wins over them.
 
 ### The project's config
 
-If the project has a `vite.config.ts` — or `.mts`, `.js`, `.mjs`, `.cjs`, or a
-`nodeless.config.*` — it is executed and its `plugins`, `define`, `resolve.alias`, `base` and
+If the project has a `vite.config.ts`, or `.mts`, `.js`, `.mjs`, `.cjs`, or a
+`nodeless.config.*`, it is executed and its `plugins`, `define`, `resolve.alias`, `base` and
 `build.outDir` are applied. A project without one builds exactly as it did before, on the same
 code path and at the same cost.
 
@@ -126,8 +133,8 @@ export default ({ mode }) => ({
 ```
 
 `node:fs` there is the VFS. `node:path`, `node:url`, `node:process`, `node:crypto`,
-`node:module` and the rest are the same — implemented against the virtual filesystem, not
-forwarded to a real one. `child_process`, `net` and their neighbours import without complaint
+`node:module` and the rest are the same. All of them are implemented against the virtual
+filesystem, not forwarded to a real one. `child_process`, `net` and their neighbours import without complaint
 and throw the moment something calls them, so a dead code path cannot take your build down.
 
 The config is run once per mode and cached, so a `watch` rebuild costs what it always did.
@@ -148,7 +155,7 @@ new NodelessProject({ files, isolation: 'worker' });
 ```
 
 Both modes rewrite every `node:fs` to the VFS shim **at bundle time**, so neither can reach a
-real filesystem — that part is not what `isolation` buys. What it buys is distance from the
+real filesystem. That part is not what `isolation` buys. What it buys is distance from the
 page. Use `'worker'` whenever the config is not yours.
 
 The worker entry ships bundled and self-contained, so there is nothing extra to serve. Pass
@@ -170,7 +177,7 @@ await project.build();
 ```
 
 Both are **optional peer dependencies**, imported only once a file is found to need them, and
-both are ordinary plugins — `enforce: 'post'`, so a config that brings `@tailwindcss/vite`
+both are ordinary plugins with `enforce: 'post'`, so a config that brings `@tailwindcss/vite`
 leaves them nothing to claim. The engine comes from the package next to nodeless; the files come
 from the VFS, which is why Tailwind has to be installed into the project like any dependency.
 
@@ -180,7 +187,7 @@ runtime, and it can.
 
 ### Adding your own
 
-Pass a plugin to the project, or put one in the config — same shape either way:
+Pass a plugin to the project, or put one in the config. Same shape either way:
 
 ```ts
 new NodelessProject({
@@ -259,8 +266,8 @@ WASM build can be mapped to it; one without cannot run here at all.
 **Output hooks**: `generateBundle` and `renderChunk` have nowhere to live, because esbuild's
 plugin API has no output phase. A manifest, compression or legacy plugin will not work.
 
-**Sourcemaps through a transform**: a plugin may return `map` and it is dropped — esbuild's
-`onLoad` takes no input sourcemap.
+**Sourcemaps through a transform**: a plugin may return `map` and it is dropped, because
+esbuild's `onLoad` takes no input sourcemap.
 
 **Running real `vite build`**: it wants `worker_threads`, an HTTP server and native rollup.
 Being compatible with Vite _plugins_ is what buys the coverage.
