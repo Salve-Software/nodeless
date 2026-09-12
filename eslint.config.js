@@ -119,6 +119,14 @@ export default config(
   },
 
   {
+    // `src/node/` is the deliberate exception to the isomorphism rule: it is the Node-only
+    // entry point, built by its own tsconfig, and `worker_threads` is the whole reason it
+    // exists. Nothing in `src/` may import from it.
+    files: ['src/node/**/*.ts'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+
+  {
     // The shims mirror Node's own signatures. `Buffer.toString(encoding, start, end)` is
     // three parameters because that is what the toolchain calls.
     files: ['src/classes/shims/**/*.ts'],

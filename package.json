@@ -23,6 +23,10 @@
     "./worker": {
       "types": "./dist/runtime-worker.d.ts",
       "default": "./dist/runtime-worker.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "default": "./dist/node/index.js"
     }
   },
   "files": [
@@ -50,7 +54,9 @@
     "typescript"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && npm run build:worker",
+    "build": "npm run build:lib && npm run build:node && npm run build:worker",
+    "build:lib": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "build:node": "tsc -p tsconfig.node.json && tsc-alias -p tsconfig.node.json",
     "build:worker": "tsx scripts/build-worker.ts",
     "typecheck": "tsc --noEmit",
     "typecheck:fast": "tsgo --noEmit",
@@ -64,6 +70,7 @@
     "example:install": "tsx example/node/install.ts",
     "example:tailwind": "tsx example/node/tailwind.ts",
     "example:vite": "tsx example/node/vite.ts",
+    "example:isolation": "tsx example/node/isolation.ts",
     "playground": "npm run build && tsx example/node/playground.ts",
     "example:browser:test": "npm run build && tsx example/node/browser.ts",
     "prepare": "husky || true"
