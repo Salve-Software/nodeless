@@ -24,6 +24,7 @@ export function usePlayground(): PlaygroundState & {
   const project = useRef<NodelessProject | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const blobs = useRef<string[]>([]);
+  const run = useRef(0);
   const [state, setState] = useState<PlaygroundState>({
     phase: 'installing',
     durationMs: 0,
@@ -34,12 +35,15 @@ export function usePlayground(): PlaygroundState & {
 
   const build = useCallback(async () => {
     const current = project.current;
-
     if (!current) return;
+
+    const id = ++run.current;
 
     setState((previous) => ({ ...previous, phase: 'building' }));
 
     const result = await current.build({ mode: 'development' });
+
+    if (id !== run.current) return;
 
     if (!result.ok) {
       setState((previous) => ({
@@ -67,11 +71,11 @@ export function usePlayground(): PlaygroundState & {
   }, []);
 
   useEffect(() => {
+    let disposed = false;
     const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     const created = new NodelessProject({
       files: STARTER,
       wasmURL: WASM_URL,
-      // The config in the editor is whatever the visitor typed, so it runs off the page.
       isolation: 'worker',
       workerUrl: `${window.location.origin}${base}/runtime-worker.js`,
     });
@@ -80,6 +84,7 @@ export function usePlayground(): PlaygroundState & {
 
     void (async () => {
       const installed = await created.install();
+      if (disposed) return;
 
       setState((previous) => ({
         ...previous,
@@ -89,6 +94,8 @@ export function usePlayground(): PlaygroundState & {
     })();
 
     return () => {
+      disposed = true;
+
       for (const url of blobs.current) URL.revokeObjectURL(url);
       void created.dispose();
     };
