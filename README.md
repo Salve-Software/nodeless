@@ -133,6 +133,27 @@ and throw the moment something calls them, so a dead code path cannot take your 
 The config is run once per mode and cached, so a `watch` rebuild costs what it always did.
 Editing the config file invalidates it, which is why Vite restarts on one too.
 
+#### Where the config runs
+
+A config is code, and in a playground it is code somebody else typed. `isolation` decides
+where it is evaluated:
+
+| Mode                 | Where                      | Isolation                                                                                                     |
+| -------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `'none'` _(default)_ | in-process, `new Function` | builtins are unreachable; the page's globals are not                                                          |
+| `'worker'`           | a Worker, browser only     | no DOM, no `localStorage`, no cookies, and `fetch`, `indexedDB` and `caches` are deleted before anything runs |
+
+```ts
+new NodelessProject({ files, isolation: 'worker' });
+```
+
+Both modes rewrite every `node:fs` to the VFS shim **at bundle time**, so neither can reach a
+real filesystem — that part is not what `isolation` buys. What it buys is distance from the
+page. Use `'worker'` whenever the config is not yours.
+
+The worker entry ships bundled and self-contained, so there is nothing extra to serve. Pass
+`workerUrl` if your bundler moves it.
+
 **Plugins use the Rollup and Vite hook shape**, which is what the ecosystem already writes
 against: `resolveId`, `load`, `transform`, `configResolved`, and `enforce: 'pre' | 'post'`.
 `resolveId` and `load` stop at the first plugin that claims a module; `transform` is a pipeline.

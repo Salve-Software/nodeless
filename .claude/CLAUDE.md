@@ -50,6 +50,7 @@ work up front; it is work that ends. This is the bet Sandpack and WebContainer b
 2. **The sandbox is the emulation, not a guard.** Every `node:fs` in the config graph is
    rewritten to a shim **at bundle time, by our own resolver**, before a line runs. The real
    builtin is unreachable rather than reachable and blocked. There is no disk to escape to.
+   `isolation: 'worker'` adds distance from the page on top of that; it does not replace it.
 3. **The package is genuinely isomorphic.** One codebase, zero Node builtins in `src/`. What
    enforces it is `tsconfig.build.json` with `types: []` — it breaks the build if anyone slips.
 4. **A failing build returns a structured error; it does not throw.** `{ ok: false, errors }`
@@ -63,8 +64,9 @@ Six modules, all green. `npm run example` builds the React scaffold offline in ~
 a project's own `vite.config.ts` — a plugin that reads `node:fs` and gets the VFS, a virtual
 module, a `define` and an alias, none of which nodeless has any code for.
 
-`npm run playground` installs from the registry **in the browser** and rebuilds as you type, and
-a headless Chromium run of it is a CI job.
+`npm run playground` installs from the registry **in the browser** and rebuilds as you type, with
+`isolation: 'worker'`, and a headless Chromium run of it is a CI job that asserts the config was
+evaluated off the page.
 
 **What is still missing**, and each is a decision rather than a gap:
 
@@ -78,6 +80,8 @@ a headless Chromium run of it is a CI job.
 - **Running real `vite build`.** Out of scope: it wants `worker_threads`, a server, and native
   rollup. Being _compatible with_ Vite plugins is what buys the coverage.
 - **React Refresh.** Still a deliberate no — a rebuild plus an iframe reload costs ~200 ms.
+- **A hardened runtime on the server.** `isolation: 'worker'` is browser-only. A Node host can
+  pass `runtime` with an implementation over `worker_threads`; the port is the seam for it.
 
 ## Mandatory rules
 

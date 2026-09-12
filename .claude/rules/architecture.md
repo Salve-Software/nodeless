@@ -51,9 +51,14 @@ enforce it:
 - `tsconfig.build.json` with `types: []` — without Node's types, `node:fs` does not compile;
 - ESLint's `no-restricted-imports`, relaxed only in `__tests__/` and `example/`.
 
-`new Function` is the evaluator for the same reason: a `Worker` is browser-only and a `data:`
-URL import is blocked by CSP in a browser. It is the least isolated of the three, and that is
-acceptable **because isolation was decided at bundle time**.
+`new Function` is the default evaluator for the same reason: a `Worker` is browser-only and a
+`data:` URL import is blocked by CSP in a browser. It is the least isolated of the three, and
+that is acceptable **because isolation was decided at bundle time**.
+
+`WorkerRuntime` is the hardened one, behind the same port. It bundles identically and evaluates
+in a Worker, which costs a channel: structured clone carries no functions, so a plugin crosses
+as data with every hook replaced by a handle. Only VFS deltas cross, and every call flushes
+them first — a hook reading `this.vfs` has to see the file the user just edited.
 
 ## A build error is data; a config error is an exception
 
@@ -94,5 +99,8 @@ and it comes out as `RuntimeError` naming the module with the original error as 
 - **`src/index.ts` never uses `export *`.** Every name is listed.
 - **A package installs, it never runs.** No `postinstall`, no `prepare`. Installing is
   downloading and unpacking; the toolchain runs at build time, from what was unpacked.
+- **The worker entry is published bundled.** A blob Worker inherits no import map, so
+  `dist/runtime-worker.js` must have zero bare imports; `build:worker` fails the build if one
+  survives. It is the one file in `dist/` that is not plain `tsc` output.
 - **Runtime dependencies are expensive.** There are four: `esbuild-wasm`, `resolve.exports`,
   `semver` and `fflate`. Each has to work in the browser with no shim.

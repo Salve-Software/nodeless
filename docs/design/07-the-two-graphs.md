@@ -90,9 +90,28 @@ resolved statically and are the remaining surface. This is documented risk, not 
 `createRequire` refuses anything but a builtin for the same reason, because answering a dynamic
 require with an empty module would fail later and somewhere else.
 
-`new Function` is the evaluator because it is the only one that exists on both sides: a `Worker`
-is browser-only and a `data:` URL import is blocked by CSP in a browser. It is the least
-isolated of the three, and that is acceptable precisely because isolation was decided earlier.
+`new Function` is the **default** evaluator because it is the only one that exists on both
+sides: a `Worker` is browser-only and a `data:` URL import is blocked by CSP in a browser.
+
+It is also the least isolated of the three, and that is only half acceptable. The builtins are
+unreachable, but the page's globals are not: a hostile `vite.config.ts` still sees `document`,
+`localStorage` and `fetch`. In a playground the config is code somebody else typed, so that
+gap is real.
+
+`isolation: 'worker'` closes it. Same bundling, same shim rewriting, evaluated in a Worker
+instead — no DOM, no `localStorage`, no cookies, and `fetch`, `indexedDB` and `caches` deleted
+before the first line runs. The cost is a channel, and the channel is the interesting part:
+
+- **Structured clone carries no functions**, and a plugin is mostly functions. Each one crosses
+  as a handle the other side turns back into a call. This is why Rollup's `this.resolve` is
+  async in the first place.
+- **The worker needs a filesystem**, so it gets a snapshot and then only deltas. A full
+  snapshot per build would cost more than the build.
+- **Every call flushes those deltas first.** A hook reading `this.vfs` runs long after the
+  module was evaluated, and has to see the file the user just edited.
+
+The default stays in-process because that half is the isomorphic one, and because a project
+with no config file evaluates nothing at all — there is nothing to isolate.
 
 ## Being compatible with Vite, not being Vite
 
@@ -120,3 +139,6 @@ plugin from npm cost nothing here.
   more honest than pretending to thread it.
 - **A moving target.** Vite's plugin API changes across majors. Smaller than a folder per tool,
   larger than zero.
+- **A hardened runtime on a server.** `isolation: 'worker'` needs a browser `Worker`. On Node
+  the seam exists — `runtime` takes any implementation of the port, and `RuntimeChannel` is
+  what a `worker_threads` adapter would implement — but nothing ships for it yet.
