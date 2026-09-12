@@ -1,0 +1,90 @@
+.compare__head {
+  max-width: 32ch;
+  margin-bottom: var(--gap-5);
+}
+
+.compare__head h2 {
+  font-size: var(--step-3);
+  margin-top: var(--gap-2);
+}
+
+.compare__grid {
+  display: grid;
+  gap: var(--gap-3);
+}
+
+.compare__card {
+  position: relative;
+  padding: var(--gap-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  transition:
+    transform 0.35s var(--ease),
+    border-color 0.35s;
+}
+
+.compare__card:hover {
+  transform: translateY(-4px);
+}
+
+.compare__card[data-tone='accent'] {
+  border-color: color-mix(in oklab, var(--accent) 38%, var(--border));
+  background: linear-gradient(
+    165deg,
+    color-mix(in oklab, var(--accent) 7%, var(--surface)),
+    var(--surface) 70%
+  );
+  box-shadow: var(--shadow);
+}
+
+.compare__card[data-tone='muted'] {
+  opacity: 0.82;
+}
+
+.compare__card[data-tone='muted']:hover {
+  opacity: 1;
+}
+
+.compare__verdict {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 0.22rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.compare__card[data-tone='accent'] .compare__verdict {
+  color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 32%, transparent);
+}
+
+.compare__card h3 {
+  font-size: var(--step-2);
+  margin: var(--gap-3) 0 0.6rem;
+}
+
+.compare__card p {
+  color: var(--text-muted);
+  font-size: var(--step--1);
+  line-height: 1.72;
+}
+
+@media (width >= 56rem) {
+  .compare__grid {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: stretch;
+  }
+
+  .compare__card[data-tone='accent'] {
+    transform: scale(1.03);
+  }
+
+  .compare__card[data-tone='accent']:hover {
+    transform: scale(1.03) translateY(-4px);
+  }
+}
