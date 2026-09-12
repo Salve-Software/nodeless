@@ -7,10 +7,11 @@ import { sealGlobals, sealProcess, WorkerHandler } from '@/classes/runtime/index
  * not resolve.
  */
 export function startRuntimeWorker(scope: WorkerScope = globalThis): void {
+  const handler = new WorkerHandler();
+
   sealGlobals(globalThis);
   sealProcess(globalThis);
-
-  const handler = new WorkerHandler();
+  handler.installGlobals(globalThis);
 
   scope.addEventListener('message', (event) => {
     void handler

@@ -31,6 +31,22 @@ export class WorkerHandler {
     this.resolver = this.createResolver();
   }
 
+  /**
+   * Replaces the realm's `process` with the shim, as a getter so it follows `init` and
+   * `reset`. Structural rather than enumerative: there is no real process to reach, instead
+   * of a real one with its dangerous members removed one by one.
+   */
+  installGlobals(scope: Record<string, unknown>): void {
+    try {
+      Object.defineProperty(scope, 'process', {
+        get: () => this.shims.get('process'),
+        configurable: false,
+      });
+    } catch {
+      // Already non-configurable. `sealProcess` is what covers the realm in that case.
+    }
+  }
+
   async handle(request: WorkerRequest): Promise<WorkerResponse> {
     try {
       return { id: request.id, ok: true, value: await this.run(request) };

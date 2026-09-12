@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { sealProcess } from '@/classes/runtime/index.js';
+import { sealProcess, WorkerHandler } from '@/classes/runtime/index.js';
+import { MemoryVfs } from '@/classes/vfs/index.js';
 
 describe('sealProcess', () => {
   it('removes the members that hand back a native module', () => {
@@ -43,5 +44,39 @@ describe('sealProcess', () => {
     expect(() =>
       Object.defineProperty(scope.process, 'binding', { value: () => 1 }),
     ).toThrowError();
+  });
+});
+
+describe('installGlobals', () => {
+  it('replaces the realm process with the shim, and follows an init', async () => {
+    const handler = new WorkerHandler();
+    const scope: Record<string, unknown> = { process: { cwd: () => '/host' } };
+
+    handler.installGlobals(scope);
+
+    await handler.handle({
+      id: 1,
+      type: 'init',
+      snapshot: new MemoryVfs().snapshot(),
+      cwd: '/project',
+      env: { FROM: 'the runtime' },
+      conditions: [],
+    });
+
+    const shimmed = scope['process'] as {
+      cwd: () => string;
+      env: Record<string, string>;
+    };
+
+    expect(shimmed.cwd()).toBe('/project');
+    expect(shimmed.env).toEqual({ FROM: 'the runtime' });
+  });
+
+  it('leaves no way to put the real one back', () => {
+    const scope: Record<string, unknown> = {};
+
+    new WorkerHandler().installGlobals(scope);
+
+    expect(() => Object.defineProperty(scope, 'process', { value: 1 })).toThrowError();
   });
 });

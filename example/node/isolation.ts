@@ -72,6 +72,16 @@ const probes = [
     body: `const g = ${HOST}; return typeof g.process.kill === 'function' ? 'reached' : 'blocked';`,
     reached: 'reached',
   },
+  {
+    label: 'learn the host cwd',
+    body: `const g = ${HOST}; return g.process.cwd() === '/' ? 'blocked' : 'reached';`,
+    reached: 'reached',
+  },
+  {
+    label: 'learn the node binary',
+    body: `const g = ${HOST}; return String(g.process.execPath ?? '').includes('/bin/node') && g.process.platform !== 'browser' ? 'reached' : 'blocked';`,
+    reached: 'reached',
+  },
 ];
 
 console.log("  what a project's own config can reach of the process building it\n");
