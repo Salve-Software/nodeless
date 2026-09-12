@@ -107,6 +107,10 @@ and it comes out as `RuntimeError` naming the module with the original error as 
 - **`src/index.ts` never uses `export *`.** Every name is listed.
 - **A package installs, it never runs.** No `postinstall`, no `prepare`. Installing is
   downloading and unpacking; the toolchain runs at build time, from what was unpacked.
+- **Running a config without a stated `isolation` is a warning, not an error.** It becomes an
+  error at 1.0; until then the behaviour is unchanged and only the silence about it is gone.
+  A warning is the right channel because `BuildResult` already carries them and a caller
+  already reads them.
 - **`src/node/` is Node-only and nothing in `src/` may import it.** It is the server half of
   `isolation: 'worker'`, built by `tsconfig.node.json` with `types: ["node"]` and excluded from
   the isomorphism guard. The dependency only ever points inward.
