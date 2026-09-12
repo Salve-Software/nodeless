@@ -24,6 +24,7 @@ export function usePlayground(): PlaygroundState & {
   const project = useRef<NodelessProject | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const blobs = useRef<string[]>([]);
+  const run = useRef(0);
   const [state, setState] = useState<PlaygroundState>({
     phase: 'installing',
     durationMs: 0,
@@ -37,9 +38,14 @@ export function usePlayground(): PlaygroundState & {
 
     if (!current) return;
 
+    // An edit can land while a build is still running, and the older one must not win the race.
+    const id = ++run.current;
+
     setState((previous) => ({ ...previous, phase: 'building' }));
 
     const result = await current.build({ mode: 'development' });
+
+    if (id !== run.current) return;
 
     if (!result.ok) {
       setState((previous) => ({
@@ -67,6 +73,7 @@ export function usePlayground(): PlaygroundState & {
   }, []);
 
   useEffect(() => {
+    let disposed = false;
     const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     const created = new NodelessProject({
       files: STARTER,
@@ -81,6 +88,10 @@ export function usePlayground(): PlaygroundState & {
     void (async () => {
       const installed = await created.install();
 
+      // StrictMode mounts twice, so this can resolve after its own project was thrown away.
+      // Building then reaches project.current, which is the replacement, mid-install.
+      if (disposed) return;
+
       setState((previous) => ({
         ...previous,
         packages: Object.keys(installed.installed).length,
@@ -89,6 +100,8 @@ export function usePlayground(): PlaygroundState & {
     })();
 
     return () => {
+      disposed = true;
+
       for (const url of blobs.current) URL.revokeObjectURL(url);
       void created.dispose();
     };
