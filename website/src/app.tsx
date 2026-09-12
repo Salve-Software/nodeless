@@ -4,6 +4,7 @@ import { Footer } from '@/components/footer/footer';
 import { Nav } from '@/components/nav/nav';
 import { Docs } from '@/pages/docs/docs';
 import { Home } from '@/pages/home/home';
+import { useDocumentTitle } from '@/hooks/use-document-title';
 import { useRoute } from '@/router/use-route';
 
 // The playground pulls the library in, so it is only fetched by whoever opens it.
@@ -15,6 +16,8 @@ const Playground = lazy(async () =>
 
 export function App() {
   const { route, go } = useRoute();
+
+  useDocumentTitle(route);
 
   return (
     <>

@@ -1,7 +1,7 @@
 /*
  * The palette is anchored on the playground screenshot: a deep slate editor with a light
  * preview. Node's green carries the brand; the Salve colours are semantic rather than
- * decorative — green is what never executes, blue is what does, yellow is the warning.
+ * decorative. Green is what never executes, violet is what does, yellow is the warning.
  */
 :root {
   --node-500: #8ce04a;
