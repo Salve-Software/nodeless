@@ -4,7 +4,7 @@ import { config, configs } from 'typescript-eslint';
 // The site is an app, not the library: it has no isomorphism guard and no class folders.
 // What it keeps is the type safety and the import hygiene.
 export default config(
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'public'] },
   js.configs.recommended,
   ...configs.recommendedTypeChecked,
   {
